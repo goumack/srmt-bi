@@ -21,9 +21,6 @@ ENV/
 # Données / Fichiers lourds
 # ========================
 *.parquet
-srmt_data.parquet
-srmt_data_2020_2025.parquet
-srmt_data_2020_2025_backup.parquet
 
 # ========================
 # Cache
@@ -39,42 +36,6 @@ ai_learning_cache.json
 .env.*
 .env.production
 .env.local
-
-# ========================
-# Backups et copies multiples
-# ========================
-backup/
-*copy*.py
-*copy *.py
-*optimise.py
-
-# ========================
-# Scripts utilitaires / debug / fix
-# ========================
-debug_test.py
-fix_*.py
-corriger_*.py
-injecter_*.py
-enrichir_*.py
-extract_*.py
-analyze_data_structure.py
-
-# ========================
-# Tests locaux / résultats
-# ========================
-test_payload.json
-resultats_tests_*.json
-test_inference_curl.ps1
-query_nim.ps1
-
-# ========================
-# Serveurs alternatifs / chatbots legacy
-# ========================
-server_final.py
-server_robust.py
-srmt_chatbot.py
-lexfin_chatbot.py
-code_generation_model.py
 
 # ========================
 # IDE / Éditeurs
