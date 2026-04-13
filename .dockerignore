@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Backups et copies
+backup/
+*.copy*.py
+*copy *.py
+srmt_data.parquet
+srmt_data_2020_2025_backup.parquet
+
+# Dev/Test
+.git/
+.gitignore
+*.md
+.env*
+debug_test.py
+enrichir_*.py
+fix_*.py
+extract_*.py
+corriger_*.py
+injecter_*.py
+analyze_data_structure.py
+server_*.py
+srmt_chatbot.py
+code_generation_model.py
+lexfin_chatbot.py
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace

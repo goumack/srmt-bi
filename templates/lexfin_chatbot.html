@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 LexFin Assistant - Expert Fiscal & Douanier</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --chat-bg: #f1f5f9;
+            --message-user: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --message-bot: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Floating Chat Button */
+        .chat-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5);
+            z-index: 1000;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(37, 99, 235, 0.6);
+        }
+
+        .chat-button i {
+            font-size: 32px;
+            color: white;
+        }
+
+        .chat-button.active i.fa-comments {
+            display: none;
+        }
+
+        .chat-button.active i.fa-times {
+            display: block;
+        }
+
+        .chat-button i.fa-times {
+            display: none;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--danger);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Chat Widget Container */
+        .chat-widget {
+            position: fixed;
+            bottom: 120px;
+            right: 30px;
+            width: 420px;
+            max-width: calc(100vw - 60px);
+            height: 650px;
+            max-height: calc(100vh - 180px);
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .chat-widget.active {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .chat-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .header-info h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+
+        .status-dot.offline {
+            background: var(--danger);
+            animation: none;
+        }
+
+        /* Messages Area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: var(--chat-bg);
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 25px;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            margin: 0 12px;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 18px 22px;
+            border-radius: 20px;
+            position: relative;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+
+        .message.user .message-content {
+            background: var(--message-user);
+            color: white;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .message.bot .message-content {
+            background: var(--message-bot);
+            color: var(--dark);
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* References */
+        .references {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .references-header {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .reference-item {
+            background: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            border-left: 3px solid var(--primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .reference-item:hover {
+            background: #e0f2fe;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+            border-left-color: var(--secondary);
+        }
+
+        .reference-item:active {
+            transform: translateX(2px) scale(0.98);
+        }
+
+        .reference-content {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e1;
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.5;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .reference-item.expanded .reference-content {
+            display: block;
+        }
+
+        .reference-item::after {
+            content: '\f105';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            transition: transform 0.2s;
+        }
+
+        .reference-item.expanded::after {
+            transform: translateY(-50%) rotate(90deg);
+        }
+
+        .reference-item:hover::after {
+            color: var(--secondary);
+        }
+
+        .reference-file {
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reference-file:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .reference-page {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 6px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #94a3b8;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.7; }
+            30% { transform: translateY(-12px); opacity: 1; }
+        }
+
+        /* Suggestions */
+        .suggestions-container {
+            padding: 18px 30px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .suggestion-chip {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            color: var(--primary);
+            padding: 10px 18px;
+            border-radius: 22px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            border: 1.5px solid var(--primary);
+            font-weight: 500;
+        }
+
+        .suggestion-chip:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Input Area */
+        .chat-input-container {
+            padding: 25px 30px;
+            background: white;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 16px 22px;
+            border: 2px solid #e5e7eb;
+            border-radius: 28px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .send-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.12) rotate(15deg);
+            box-shadow: 0 8px 28px rgba(37, 99, 235, 0.5);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            text-align: center;
+            padding: 80px 40px;
+            color: #64748b;
+        }
+
+        .welcome-screen i {
+            font-size: 90px;
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+        }
+
+        .welcome-screen h2 {
+            font-size: 32px;
+            color: var(--dark);
+            margin-bottom: 18px;
+            font-weight: 700;
+        }
+
+        .welcome-screen p {
+            font-size: 17px;
+            line-height: 1.7;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            border-radius: 4px;
+        }
+
+        /* Error message */
+        .error-message {
+            background: #fef2f2;
+            border-left-color: var(--danger);
+            color: #b91c1c;
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-widget {
+                bottom: 100px;
+                right: 15px;
+                left: 15px;
+                width: auto;
+                max-width: none;
+                height: calc(100vh - 150px);
+            }
+
+            .chat-button {
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+            }
+
+            .chat-button i {
+                font-size: 28px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .chat-header {
+                padding: 18px 20px;
+            }
+
+            .header-info h1 {
+                font-size: 18px;
+            }
+
+            .suggestion-chip {
+                font-size: 13px;
+                padding: 8px 14px;
+            }
+        }
+
+        /* PDF Modal */
+        .pdf-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .pdf-modal.active {
+            display: flex;
+        }
+
+        .pdf-container {
+            width: 90%;
+            max-width: 1400px;
+            height: 90vh;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.5);
+        }
+
+        .pdf-header {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .pdf-title {
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .pdf-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            margin-left: 15px;
+        }
+
+        .pdf-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .pdf-viewer {
+            flex: 1;
+            overflow: hidden;
+            background: #525659;
+        }
+
+        .pdf-viewer iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Page Content */
+        .page-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: white;
+        }
+
+        .page-content h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .page-content p {
+            font-size: 20px;
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </div>
+
+    <script>
+        let isProcessing = false;
+        let chatOpen = false;
+
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            const chatWidget = document.getElementById('chatWidget');
+            const chatButton = document.getElementById('chatButton');
+            const notificationBadge = document.getElementById('notificationBadge');
+            
+            if (chatOpen) {
+                chatWidget.classList.add('active');
+                chatButton.classList.add('active');
+                notificationBadge.style.display = 'none';
+                document.getElementById('chatInput').focus();
+            } else {
+                chatWidget.classList.remove('active');
+                chatButton.classList.remove('active');
+            }
+        }
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            font-size: 16px;
+            text-align: left;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Content -->
+    <div class="page-content">
+        <h1>🤖 LexFin Assistant</h1>
+        <p>Votre expert en droit fiscal et douanier sénégalais</p>
+
+        <div class="features">
+            <div class="feature-card">
+                <i class="fas fa-balance-scale"></i>
+                <h3>Expertise Fiscale</h3>
+                <p>Questions sur la TVA, l'impôt sur les sociétés, les obligations fiscales et plus encore.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-ship"></i>
+                <h3>Droit Douanier</h3>
+                <p>Informations sur les droits de douane, les importations et les procédures douanières.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-book"></i>
+                <h3>Références Légales</h3>
+                <p>Réponses basées sur le Code des Impôts et le Code des Douanes du Sénégal.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-bolt"></i>
+                <h3>Réponses Rapides</h3>
+                <p>Obtenez des réponses précises en quelques secondes grâce à l'IA.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 60px; font-size: 18px;">
+            <p>👉 Cliquez sur le bouton en bas à droite pour commencer</p>
+        </div>
+    </div>
+
+    <!-- Floating Chat Button -->
+    <button class="chat-button" id="chatButton" onclick="toggleChat()">
+        <i class="fas fa-comments"></i>
+        <i class="fas fa-times"></i>
+        <span class="notification-badge" id="notificationBadge" style="display: none;">1</span>
+    </button>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget" id="chatWidget">
+        <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="header-info">
+                    <h1>LexFin Assistant</h1>
+                    <p>Expert en droit fiscal et douanier sénégalais</p>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">En ligne</span>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-screen">
+                <i class="fas fa-gavel"></i>
+                <h2>Bienvenue sur LexFin Assistant 👋</h2>
+                <p>Je suis votre expert en droit fiscal et douanier sénégalais. Posez-moi vos questions sur la TVA, les droits de douane, l'impôt sur les sociétés et bien plus encore.</p>
+            </div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="suggestions-container" id="suggestionsContainer">
+            <!-- Suggestions will be loaded here -->
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-container">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="chatInput" 
+                    placeholder="Posez votre question fiscale ou douanière..."
+                    autocomplete="off"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Modal -->
+    <div class="pdf-modal" id="pdfModal">
+        <div class="pdf-container">
+            <div class="pdf-header">
+                <div class="pdf-title" id="pdfTitle">Document PDF</div>
+                <button class="pdf-close" onclick="closePdfModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="pdf-viewer">
+                <iframe id="pdfViewer"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isProcessing = false;
+        let chatOpen = false;
+
+        // Toggle Chat Function (must be defined BEFORE DOMContentLoaded)
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            const chatWidget = document.getElementById('chatWidget');
+            const chatButton = document.getElementById('chatButton');
+            const notificationBadge = document.getElementById('notificationBadge');
+            
+            if (chatOpen) {
+                chatWidget.classList.add('active');
+                chatButton.classList.add('active');
+                notificationBadge.style.display = 'none';
+                setTimeout(() => {
+                    const input = document.getElementById('chatInput');
+                    if (input) input.focus();
+                }, 300);
+            } else {
+                chatWidget.classList.remove('active');
+                chatButton.classList.remove('active');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSuggestions();
+            checkHealth();
+            
+            // Enter key to send
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        });
+
+        function loadSuggestions() {
+            fetch('/api/suggestions')
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('suggestionsContainer');
+                    container.innerHTML = data.suggestions.map(s => 
+                        `<span class="suggestion-chip" onclick="useSuggestion(\`${s}\`)">${s}</span>`
+                    ).join('');
+                })
+                .catch(err => console.error('Error loading suggestions:', err));
+        }
+
+        function checkHealth() {
+            fetch('/api/health')
+                .then(r => r.json())
+                .then(data => {
+                    const statusDot = document.getElementById('statusDot');
+                    const statusText = document.getElementById('statusText');
+                    
+                    if (data.lexfin_api === 'online') {
+                        statusDot.classList.remove('offline');
+                        statusText.textContent = 'En ligne';
+                    } else {
+                        statusDot.classList.add('offline');
+                        statusText.textContent = 'API hors ligne';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('statusDot').classList.add('offline');
+                    document.getElementById('statusText').textContent = 'Déconnecté';
+                });
+
+            // Re-check every 30 seconds
+            setTimeout(checkHealth, 30000);
+        }
+
+        function useSuggestion(suggestion) {
+            // Remove emoji from suggestion
+            const cleanText = suggestion.replace(/^[\p{Emoji}]\s*/u, '');
+            document.getElementById('chatInput').value = cleanText;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            if (isProcessing) return;
+            
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            isProcessing = true;
+            input.value = '';
+            document.getElementById('sendBtn').disabled = true;
+
+            // Add user message
+            addMessage(message, 'user');
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: message})
+                });
+
+                const data = await response.json();
+                
+                hideTypingIndicator();
+
+                if (data.status === 'success') {
+                    addMessage(data.response, 'bot', data.references, data.processing_time);
+                } else {
+                    addMessage(`❌ ${data.error}`, 'bot', null, null, true);
+                }
+
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage(`❌ Erreur de connexion: ${error.message}`, 'bot', null, null, true);
+            }
+
+            isProcessing = false;
+            document.getElementById('sendBtn').disabled = false;
+            input.focus();
+        }
+
+        function addMessage(text, sender, references = null, processingTime = null, isError = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const welcomeScreen = messagesContainer.querySelector('.welcome-screen');
+            if (welcomeScreen) welcomeScreen.remove();
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const time = new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+            
+            let content = `
+                <div class="message-avatar">
+                    <i class="fas fa-${sender === 'user' ? 'user' : 'robot'}"></i>
+                </div>
+                <div class="message-content ${isError ? 'error-message' : ''}">
+                    ${formatMessage(text)}
+                    ${references ? formatReferences(references) : ''}
+                    <div class="message-time">
+                        <i class="far fa-clock"></i>
+                        ${time}
+                        ${processingTime ? `• ${processingTime}` : ''}
+                    </div>
+                </div>
+            `;
+            
+            messageDiv.innerHTML = content;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function formatMessage(text) {
+            // Convert markdown-like syntax
+            // Process headings first (must be done before converting newlines)
+            text = text.replace(/^#\s+(.*)$/gm, '<h2 style="font-size: 1.3em; font-weight: 700; margin: 16px 0 10px 0; color: var(--primary);">$1</h2>');
+            text = text.replace(/^##\s+(.*)$/gm, '<h3 style="font-size: 1.1em; font-weight: 600; margin: 14px 0 8px 0; color: var(--primary);">$1</h3>');
+            text = text.replace(/^###\s+(.*)$/gm, '<h4 style="font-size: 1em; font-weight: 600; margin: 12px 0 6px 0; color: #475569;">$1</h4>');
+            
+            // Bold and italic
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Lists (unordered)
+            text = text.replace(/^[\-\•]\s+(.*)$/gm, '<div style="margin-left: 20px; margin-bottom: 4px;">• $1</div>');
+            
+            // Convert newlines to <br> (do this last)
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+
+        function formatReferences(references) {
+            if (!references || references.length === 0) return '';
+            
+            let html = `<div class="references">
+                <div class="references-header">
+                    <i class="fas fa-book"></i>
+                    ${references.length} référence(s) trouvée(s)
+                </div>`;
+            
+            references.slice(0, 3).forEach((ref, index) => {
+                const content = ref.content || ref.text || 'Contenu non disponible';
+                const truncatedContent = content.length > 200 ? content.substring(0, 200) + '...' : content;
+                const fileName = ref.file_name || 'Document';
+                const pageInfo = ref.page_info || '';
+                const articleRef = ref.article_ref || '';
+                
+                // Extraire le numéro de page depuis page_info (ex: "page 180" -> 180)
+                let pageNumber = 1;
+                const pageMatch = pageInfo.match(/page[s]?\s*(\d+)/i);
+                if (pageMatch) {
+                    pageNumber = parseInt(pageMatch[1]);
+                }
+                
+                // Stocker les données complètes dans un attribut data
+                const refDataJson = JSON.stringify({
+                    fileName,
+                    pageInfo,
+                    articleRef,
+                    content,
+                    pageNumber
+                }).replace(/"/g, '&quot;');
+                
+                html += `
+                    <div class="reference-item" data-ref='${refDataJson}' title="Cliquez pour ouvrir le PDF complet">
+                        <div class="reference-file" onclick="event.stopPropagation(); openPdfDocument(this.parentElement)">
+                            <i class="fas fa-file-pdf"></i>
+                            ${fileName}
+                        </div>
+                        <div class="reference-page">${pageInfo} ${articleRef ? '• ' + articleRef : ''}</div>
+                        <div class="reference-content" onclick="event.stopPropagation()">
+                            <strong>Extrait :</strong><br>
+                            ${truncatedContent}
+                            <button onclick="event.stopPropagation(); openPdfDocument(this.closest('.reference-item'))" 
+                                    style="margin-top: 8px; padding: 6px 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 11px;">
+                                <i class="fas fa-external-link-alt"></i> Ouvrir le PDF
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        function toggleReference(element) {
+            // Fermer toutes les autres références ouvertes
+            const allRefs = document.querySelectorAll('.reference-item.expanded');
+            allRefs.forEach(ref => {
+                if (ref !== element) {
+                    ref.classList.remove('expanded');
+                }
+            });
+            
+            // Toggle la référence cliquée
+            element.classList.toggle('expanded');
+        }
+
+        function openPdfDocument(element) {
+            const refData = JSON.parse(element.getAttribute('data-ref'));
+            const pdfModal = document.getElementById('pdfModal');
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfTitle = document.getElementById('pdfTitle');
+            
+            // Construire l'URL du PDF depuis le serveur API distant
+            const baseUrl = 'https://srmt-documind-nim-exploration-srmt.apps.ocp.heritage.africa/files/';
+            const encodedFileName = encodeURIComponent(refData.fileName);
+            const pdfUrl = `${baseUrl}${encodedFileName}#page=${refData.pageNumber}`;
+            
+            // Mettre à jour le titre
+            pdfTitle.innerHTML = `
+                <i class="fas fa-file-pdf"></i> ${refData.fileName}
+                ${refData.articleRef ? `<span style="opacity: 0.8; font-size: 14px; margin-left: 10px;">• ${refData.articleRef}</span>` : ''}
+                ${refData.pageInfo ? `<span style="opacity: 0.8; font-size: 14px; margin-left: 10px;">• ${refData.pageInfo}</span>` : ''}
+            `;
+            
+            // Charger le PDF dans l'iframe
+            pdfViewer.src = pdfUrl;
+            
+            // Afficher le modal
+            pdfModal.classList.add('active');
+            
+            // Ajouter la fermeture par Escape
+            document.addEventListener('keydown', closePdfOnEscape);
+        }
+
+        function closePdfModal() {
+            const pdfModal = document.getElementById('pdfModal');
+            const pdfViewer = document.getElementById('pdfViewer');
+            
+            pdfModal.classList.remove('active');
+            pdfViewer.src = '';
+            
+            // Retirer l'event listener
+            document.removeEventListener('keydown', closePdfOnEscape);
+        }
+
+        function closePdfOnEscape(e) {
+            if (e.key === 'Escape') {
+                closePdfModal();
+            }
+        }
+
+        // Fermer le modal si on clique en dehors
+        document.addEventListener('DOMContentLoaded', function() {
+            const pdfModal = document.getElementById('pdfModal');
+            pdfModal.addEventListener('click', function(e) {
+                if (e.target === pdfModal) {
+                    closePdfModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# SRMT BI - Dépendances Production (optimisé pour Docker)
+
+# Core Framework
+flask>=2.3.0
+gunicorn==21.2.0
+
+# Data Processing
+polars>=0.20.0
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=10.0.0
+
+# AI
+openai>=1.12.0
+requests>=2.31.0
+
+# Cache (optionnel)
+Flask-Caching==2.1.0
