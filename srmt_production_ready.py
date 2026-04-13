@@ -8,7 +8,7 @@ import re
 import json
 import time
 import math
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import logging
 import warnings
 import requests  # Pour les appels IA de correction
@@ -242,9 +242,9 @@ class OptimizedDataLoader:
                 aggregated['bureau_stats'] = bureau_stats
                 logger.info("OK Statistiques par bureau créées")
             
-            # 4. Statistiques par direction régionale
-            if 'DIRECTION_REGIONALE' in df.columns:
-                region_stats = df.lazy().group_by('DIRECTION_REGIONALE').agg([
+            # 4. Statistiques par direction
+            if 'DIRECTION' in df.columns:
+                region_stats = df.lazy().group_by('DIRECTION').agg([
                     pl.col('MONTANT_DECLARE').sum().alias('TOTAL_DECLARE'),
                     pl.col('MONTANT_RECOUVRE').sum().alias('TOTAL_RECOUVRE'),
                     pl.len().alias('NOMBRE_DECLARATIONS')
@@ -253,8 +253,8 @@ class OptimizedDataLoader:
                 logger.info("OK Statistiques régionales créées")
             
             # 5. Statistiques par type de taxe
-            if 'TYPE_IMPOT_TAXE' in df.columns:
-                tax_stats = df.lazy().group_by('TYPE_IMPOT_TAXE').agg([
+            if 'TAXE_IMPOT_CD' in df.columns:
+                tax_stats = df.lazy().group_by('TAXE_IMPOT_CD').agg([
                     pl.col('MONTANT_DECLARE').sum().alias('TOTAL_DECLARE'),
                     pl.col('MONTANT_RECOUVRE').sum().alias('TOTAL_RECOUVRE'),
                     pl.len().alias('NOMBRE_DECLARATIONS')
@@ -1456,7 +1456,8 @@ SCHMA DES DONNES:
 {error_prevention}
 ENVIRONNEMENT:
 - `data` : LazyFrame Polars pré-chargé (2025-2026), utiliser tel quel
-- `TODAY` : date du jour | `pl` : module polars importé
+- `TODAY` : date du jour (type Python date) | `pl` : module polars importé
+- `timedelta` : déjà importé depuis datetime
 - Ne PAS importer de fichiers, ne PAS créer de DataFrame manuellement
 
 CONTRAINTES POLARS:
@@ -1467,13 +1468,38 @@ CONTRAINTES POLARS:
 - Négation: ~pl.col('X').str.contains('y') OK, mais JAMAIS ~pl.col('X') == 'Y' → utiliser pl.col('X') != 'Y'
 - Inclure pl.len().alias('NB_LIGNES') dans les agrégations
 - Faire les calculs dans Polars (.with_columns()) pas en Python après .collect()
+- ⚠️ ARITHMÉTIQUE DE DATES: TODAY est un Python date. Utiliser timedelta pour les calculs :
+  INTERDIT: TODAY - pl.duration(days=1)  → ERREUR de type !
+  CORRECT:  pl.lit(TODAY - timedelta(days=1))  ou  pl.lit(TODAY) pour la date du jour
+  Exemple hier: pl.col('DATE_DECLARATION') == pl.lit(TODAY - timedelta(days=1))
+- ⚠️ OPÉRATEUR | (OU): TOUJOURS entourer les conditions OR de parenthèses car & a priorité sur |
+  INTERDIT: .filter((A) & (B) & (C) | (D))  → D est évalué seul !
+  CORRECT:  .filter((A) & (B) & ((C) | (D)))  → C|D est groupé
+- ⚠️ DATES NULL: Quand on filtre des dates potentiellement nulles, TOUJOURS tester .is_null() AVANT les comparaisons
+
+RÈGLES MÉTIER IMPORTANTES:
+- "Pas encore recouvré" / "non recouvré" = DATE_RECOUVREMENT > TODAY (date future) OU DATE_RECOUVREMENT.is_null()
+  Les données contiennent des dates de recouvrement futures (projections). Un recouvrement dans le futur = pas encore effectué.
+  Exemple: .filter((pl.col('DATE_RECOUVREMENT').is_null()) | (pl.col('DATE_RECOUVREMENT') > pl.lit(TODAY)))
+- "Déclaré mais pas recouvré le même mois" = même logique avec comparaison année/mois
+
+COLONNES RÉELLES (noms exacts):
+- BUREAU, SOURCE, DIRECTION, LIBELLE, NATURE, CATEGORIE, TAXE_IMPOT_CD
+- ⚠️ La colonne s'appelle DIRECTION (pas DIRECTION_REGIONALE) et TAXE_IMPOT_CD (pas TYPE_IMPOT_TAXE)
 
 INSTRUCTIONS:
 1. Comprends la demande de l'utilisateur naturellement
 2. Définis les filtres appropriés (BUREAU, SOURCE, dates, etc.)
 3. Choisis le group_by qui correspond à ce que l'utilisateur veut voir
 4. Agrège avec TOTAL_DECLARE, TOTAL_RECOUVRE, NB_LIGNES
-5. Retourne: result = {{"principal": data.filter(...).group_by(...).agg([...]).sort(...).collect().to_dicts()}}
+5. ⚠️ COLONNES ENRICHIES pour DÉCIDEURS: Ajouter dans .agg() des colonnes descriptives avec .first().
+   ❗ RÈGLE ANTI-DOUBLON: NE JAMAIS ajouter dans .agg() une colonne qui est DÉJÀ dans group_by().
+   Exemple si group_by('ID_CONTRIBUABLE'):
+     .agg([pl.col('MONTANT_RECOUVRE').sum().alias('TOTAL_RECOUVRE'), pl.col('MONTANT_DECLARE').sum().alias('TOTAL_DECLARE'), pl.len().alias('NB_LIGNES'), pl.col('BUREAU').first().alias('BUREAU'), pl.col('SOURCE').first().alias('SOURCE'), pl.col('DIRECTION').first().alias('DIRECTION'), pl.col('LIBELLE').first().alias('LIBELLE'), pl.col('NATURE').first().alias('NATURE'), pl.col('TAXE_IMPOT_CD').first().alias('TYPE_IMPOT')])
+   Exemple si group_by('BUREAU'):
+     .agg([...]) → NE PAS mettre pl.col('BUREAU').first() car BUREAU est déjà clé du group_by !
+   ❗ INTERDIT: Mettre la même colonne dans group_by() ET dans .agg() → DuplicateError
+6. Retourne: result = {{"principal": data.filter(...).group_by(...).agg([...]).sort(...).collect().to_dicts()}}
 
 Génère uniquement le code Python, sans explication.
 
@@ -1506,7 +1532,11 @@ Génère uniquement le code Python, sans explication.
             #  GNRATION D'ANALYSE RSUME NARRATIVE (avec analyses complémentaires)
             analyse_resume = self._generate_narrative_summary(query, data, kpis, analyses_complementaires)
             
-            # FAST Recommandations et alertes optionnelles (gain 60s si désactivées)
+            # 🎯 RECOMMANDATIONS STRATÉGIQUES LOCALES (toujours activées, sans appel API)
+            recommandations_strategiques = enriched_data.get('recommandations_strategiques', [])
+            alertes_decisionnelles = enriched_data.get('alertes_decisionnelles', [])
+            
+            # FAST Recommandations et alertes via IA optionnelles (gain 60s si désactivées)
             recommandations = []
             alertes = []
             
@@ -1529,11 +1559,13 @@ Génère uniquement le code Python, sans explication.
             summary = {
                 'type': 'decision_analysis',
                 'titre': self._generate_title(query, metadata.get('query_type', 'general')),
-                'analyse_resume': analyse_resume,  # Nouvelle section narrative
+                'analyse_resume': analyse_resume,  # Briefing décisionnel complet
                 'synthese_executive': self._generate_executive_text(query, kpis, data),
                 'kpis': kpis,
                 'donnees_detaillees': donnees_array,  # TOUJOURS un array
                 'analyses_complementaires': analyses_complementaires,  #  Analyses multi-dimensionnelles
+                'recommandations_strategiques': recommandations_strategiques,  # 🎯 NOUVEAU: Recommandations pour décideurs
+                'alertes_decisionnelles': alertes_decisionnelles,  # 🚨 NOUVEAU: Alertes pour décideurs
                 'recommandations': recommandations,
                 'alertes': alertes
             }
@@ -1571,58 +1603,223 @@ Génère uniquement le code Python, sans explication.
         return titles.get(query_type, 'DATA Synthèse Décisionnelle')
     
     def _generate_narrative_summary(self, query: str, data: list, kpis: Dict, analyses_complementaires: Dict = None) -> str:
-        """FAST Génération narrative locale (sans appel API) - gain ~8-10s"""
+        """📊 BRIEFING DÉCISIONNEL COMPLET pour décideurs de haut niveau (Ministre, DG)"""
         try:
             result_rows = len(data) if data else 0
             parts = []
             
-            # Nombre d'enregistrements
+            # ═══════════════════════════════════════════════════════════════
+            # 1. CONTEXTE ET PÉRIMÈTRE D'ANALYSE
+            # ═══════════════════════════════════════════════════════════════
             nb_records = kpis.get('nb_enregistrements_analyses', 0)
             if nb_records > 0:
-                parts.append(f"L'analyse porte sur **{nb_records:,} enregistrements fiscaux** agrégés en {result_rows} groupes.")
+                parts.append(f"**📋 Périmètre d'analyse :** {nb_records:,} enregistrements fiscaux agrégés en **{result_rows} entités distinctes**.")
             elif result_rows > 0:
-                parts.append(f"L'analyse a identifié **{result_rows} groupes** de résultats.")
+                parts.append(f"**📋 Périmètre :** {result_rows} entités identifiées dans le périmètre de l'analyse.")
             
-            # Montants
+            # ═══════════════════════════════════════════════════════════════
+            # 2. PERFORMANCE FINANCIÈRE GLOBALE
+            # ═══════════════════════════════════════════════════════════════
             total_recouvre = kpis.get('montant_recouvre') or kpis.get('total_recouvre')
             total_declare = kpis.get('montant_declare') or kpis.get('total_declare')
             
             if total_recouvre and total_declare:
                 taux = (total_recouvre / total_declare * 100) if total_declare > 0 else 0
-                parts.append(f"Le montant total déclaré s'élève à **{total_declare:,.0f} FCFA** pour un recouvrement de **{total_recouvre:,.0f} FCFA**, soit un taux de recouvrement de **{taux:.1f}%**.")
+                # Qualification de la performance
+                if taux >= 105:
+                    perf_label = "🟢 **SURPERFORMANCE**"
+                    perf_detail = "Le recouvrement excède significativement les déclarations, traduisant une efficacité remarquable du dispositif de recouvrement."
+                elif taux >= 95:
+                    perf_label = "🟢 **PERFORMANCE SATISFAISANTE**"
+                    perf_detail = "Le taux de recouvrement est dans la fourchette optimale, traduisant un bon fonctionnement du système fiscal."
+                elif taux >= 80:
+                    perf_label = "🟡 **PERFORMANCE MODÉRÉE**"
+                    perf_detail = "Le taux de recouvrement reste en deçà des objectifs. Des mesures d'optimisation sont nécessaires."
+                else:
+                    perf_label = "🔴 **SOUS-PERFORMANCE CRITIQUE**"
+                    perf_detail = "Le déficit de recouvrement est alarmant et nécessite des mesures d'urgence de la part des autorités."
+                
+                parts.append(f"\n\n**💰 Performance financière globale — {perf_label}**")
+                parts.append(f"Le montant total déclaré s'élève à **{total_declare:,.0f} FCFA** pour un recouvrement effectif de **{total_recouvre:,.0f} FCFA**, soit un **taux de recouvrement de {taux:.1f}%**. {perf_detail}")
+                
                 ecart = total_recouvre - total_declare
                 if ecart > 0:
-                    parts.append(f"L'écart positif de {ecart:,.0f} FCFA indique un recouvrement supérieur aux déclarations.")
+                    parts.append(f"L'excédent de recouvrement de **+{ecart:,.0f} FCFA** ({ecart/total_declare*100:.1f}% au-dessus des déclarations) peut s'expliquer par les pénalités de retard, les redressements fiscaux ou les recouvrements sur exercices antérieurs.")
                 elif ecart < 0:
-                    parts.append(f"Un écart négatif de {abs(ecart):,.0f} FCFA est observé entre les montants déclarés et recouvrés.")
+                    perte_pct = abs(ecart) / total_declare * 100
+                    parts.append(f"⚠️ **Alerte financière :** Un manque à gagner de **{abs(ecart):,.0f} FCFA** est constaté, représentant **{perte_pct:.1f}%** du montant déclaré. Ce gap nécessite une analyse approfondie des causes de sous-recouvrement.")
             elif total_recouvre:
-                parts.append(f"Le montant total recouvré atteint **{total_recouvre:,.0f} FCFA**.")
+                parts.append(f"\n\n**💰 Volume de recouvrement :** Le montant total recouvré atteint **{total_recouvre:,.0f} FCFA**.")
             elif total_declare:
-                parts.append(f"Le montant total déclaré s'élève à **{total_declare:,.0f} FCFA**.")
+                parts.append(f"\n\n**💰 Volume déclaré :** Le montant total déclaré s'élève à **{total_declare:,.0f} FCFA**.")
             
-            # Moyennes
-            if total_recouvre and result_rows > 0:
-                moy = total_recouvre / result_rows
-                parts.append(f"La moyenne par entité s'établit à **{moy:,.0f} FCFA**.")
+            # ═══════════════════════════════════════════════════════════════
+            # 3. POIDS ET RÉPARTITION DES RECETTES (langage décisionnel)
+            # ═══════════════════════════════════════════════════════════════
+            if data and isinstance(data, list) and len(data) >= 3 and isinstance(data[0], dict):
+                val_col = next((k for k in ['TOTAL_RECOUVRE', 'MONTANT_RECOUVRE', 'TOTAL_DECLARE', 'MONTANT_DECLARE'] if k in data[0]), None)
+                id_col = next((k for k in data[0].keys() if k not in ['NB_LIGNES', 'TOTAL_DECLARE', 'TOTAL_RECOUVRE', 'MONTANT_DECLARE', 'MONTANT_RECOUVRE', 'COUNT', 'count', 'BUREAU', 'SOURCE', 'DIRECTION', 'LIBELLE', 'NATURE', 'CATEGORIE', 'TAXE_IMPOT_CD', 'TYPE_IMPOT']), None)
+                
+                if val_col and id_col:
+                    values = [float(row.get(val_col, 0) or 0) for row in data]
+                    total_val = sum(values)
+                    
+                    if total_val > 0 and len(values) >= 3:
+                        # Concentration Top 3
+                        top3_sum = sum(sorted(values, reverse=True)[:3])
+                        concentration_top3 = (top3_sum / total_val) * 100
+                        
+                        # Montant moyen
+                        moy = total_val / len(values)
+                        
+                        # Écart entre premier et dernier
+                        val_max = max(values)
+                        val_min = min(values)
+                        
+                        parts.append(f"\n\n**📊 Poids et répartition des recettes**")
+                        parts.append(f"Le montant moyen par entité s'établit à **{moy:,.0f} FCFA** sur {len(values)} entités analysées.")
+                        
+                        if concentration_top3 > 50:
+                            parts.append(f"⚠️ **Point d'attention :** Les 3 premiers contribuables pèsent à eux seuls **{concentration_top3:.1f}%** des recettes totales. Cette dépendance constitue un risque budgétaire : la défaillance d'un seul d'entre eux impacterait significativement les finances publiques.")
+                        elif concentration_top3 > 30:
+                            parts.append(f"Les 3 premiers contribuables représentent **{concentration_top3:.1f}%** des recettes, montrant une répartition relativement équilibrée.")
+                        else:
+                            parts.append(f"La base fiscale est bien diversifiée : les 3 premiers ne représentent que **{concentration_top3:.1f}%** du total, limitant le risque de dépendance.")
+                        
+                        if val_min > 0:
+                            ecart_absolu = val_max - val_min
+                            parts.append(f"L'écart entre le plus gros contributeur (**{val_max:,.0f} FCFA**) et le plus petit (**{val_min:,.0f} FCFA**) est de **{ecart_absolu:,.0f} FCFA**.")
             
-            # Top entités (si classement)
+            # ═══════════════════════════════════════════════════════════════
+            # 4. CLASSEMENT DÉTAILLÉ ET FAITS SAILLANTS
+            # ═══════════════════════════════════════════════════════════════
             if data and isinstance(data, list) and len(data) >= 2 and isinstance(data[0], dict):
                 first = data[0]
                 last = data[-1]
-                # Trouver la colonne de classement
-                id_col = next((k for k in first.keys() if k not in ['NB_LIGNES', 'TOTAL_DECLARE', 'TOTAL_RECOUVRE', 'MONTANT_DECLARE', 'MONTANT_RECOUVRE']), None)
+                id_col = next((k for k in first.keys() if k not in ['NB_LIGNES', 'TOTAL_DECLARE', 'TOTAL_RECOUVRE', 'MONTANT_DECLARE', 'MONTANT_RECOUVRE', 'COUNT', 'count', 'BUREAU', 'SOURCE', 'DIRECTION', 'LIBELLE', 'NATURE', 'CATEGORIE', 'TAXE_IMPOT_CD', 'TYPE_IMPOT']), None)
                 val_col = next((k for k in ['TOTAL_RECOUVRE', 'MONTANT_RECOUVRE', 'TOTAL_DECLARE', 'MONTANT_DECLARE'] if k in first), None)
-                if id_col and val_col and first.get(id_col) and last.get(id_col):
-                    parts.append(f"En tête du classement, **{first[id_col]}** avec {first.get(val_col, 0):,.0f} FCFA, suivi par les autres entités du groupe analysé.")
+                
+                if id_col and val_col:
+                    parts.append(f"\n\n**🏆 Classement et faits saillants**")
+                    # Top 3 détaillé avec caractéristiques
+                    for i, row in enumerate(data[:3]):
+                        val = float(row.get(val_col, 0) or 0)
+                        medal = ['🥇', '🥈', '🥉'][i]
+                        nb_ops = row.get('NB_LIGNES', 'N/A')
+                        # Enrichir avec les infos contextuelles disponibles
+                        details = []
+                        if row.get('BUREAU'): details.append(f"Bureau : {row['BUREAU']}")
+                        if row.get('SOURCE'): details.append(f"Source : {row['SOURCE']}")
+                        if row.get('DIRECTION') or row.get('DIRECTION_REGIONALE'): details.append(f"Direction : {row.get('DIRECTION') or row.get('DIRECTION_REGIONALE')}")
+                        detail_str = f" — *{', '.join(details)}*" if details else ""
+                        parts.append(f"{medal} **{row.get(id_col, 'N/A')}** — **{val:,.0f} FCFA** ({nb_ops} opérations){detail_str}")
+                    
+                    # Écart entre 1er et dernier (langage simple)
+                    val_first = float(first.get(val_col, 0) or 0)
+                    val_last = float(last.get(val_col, 0) or 0)
+                    if val_last > 0:
+                        parts.append(f"\nL'écart entre le 1er (**{first.get(id_col)}**, {val_first:,.0f} FCFA) et le dernier (**{last.get(id_col)}**, {val_last:,.0f} FCFA) est de **{val_first - val_last:,.0f} FCFA**.")
             
-            # Contexte complémentaire
+            # ═══════════════════════════════════════════════════════════════
+            # 5. VENTILATION PAR DIMENSIONS (CATEGORIE, NATURE, LIBELLE, SOURCE)
+            # ═══════════════════════════════════════════════════════════════
+            if data and isinstance(data, list) and len(data) >= 2 and isinstance(data[0], dict):
+                val_col_vent = next((k for k in ['TOTAL_RECOUVRE', 'MONTANT_RECOUVRE', 'TOTAL_DECLARE', 'MONTANT_DECLARE'] if k in data[0]), None)
+                total_vent = sum(float(row.get(val_col_vent, 0) or 0) for row in data) if val_col_vent else 0
+                
+                # Dimensions à analyser (colonnes catégorielles présentes dans les données)
+                dimensions = [
+                    ('CATEGORIE', '📂 Répartition par catégorie', 'catégorie'),
+                    ('NATURE', '🏷️ Répartition par nature', 'nature'),
+                    ('SOURCE', '🏛️ Répartition par source (DGID/DGD)', 'source'),
+                ]
+                
+                has_ventilation = False
+                for col_name, titre, label in dimensions:
+                    if col_name in data[0] and val_col_vent and total_vent > 0:
+                        # Agréger par cette dimension
+                        dim_totals = {}
+                        dim_counts = {}
+                        for row in data:
+                            key = row.get(col_name, 'Non renseigné') or 'Non renseigné'
+                            val = float(row.get(val_col_vent, 0) or 0)
+                            nb = int(row.get('NB_LIGNES', 0) or 0)
+                            dim_totals[key] = dim_totals.get(key, 0) + val
+                            dim_counts[key] = dim_counts.get(key, 0) + nb
+                        
+                        # Trier par montant décroissant
+                        sorted_dims = sorted(dim_totals.items(), key=lambda x: x[1], reverse=True)
+                        
+                        if len(sorted_dims) >= 2:
+                            if not has_ventilation:
+                                parts.append(f"\n\n**📊 Analyse détaillée par dimension**")
+                                has_ventilation = True
+                            
+                            parts.append(f"\n**{titre}** ({len(sorted_dims)} {label}s distinctes) :")
+                            for i, (dim_name, dim_val) in enumerate(sorted_dims[:5]):
+                                pct = (dim_val / total_vent * 100)
+                                nb_total = dim_counts.get(dim_name, 0)
+                                bar = '█' * int(pct / 5) + '░' * (20 - int(pct / 5))
+                                parts.append(f"  {'▸' if i > 0 else '▹'} **{dim_name}** — {dim_val:,.0f} FCFA ({pct:.1f}%) — {nb_total:,} opérations")
+                            
+                            if len(sorted_dims) > 5:
+                                reste_val = sum(v for _, v in sorted_dims[5:])
+                                parts.append(f"  ▸ *{len(sorted_dims) - 5} autres {label}s* — {reste_val:,.0f} FCFA ({reste_val/total_vent*100:.1f}%)")
+                            
+                            # Insight décisionnel sur la concentration de cette dimension
+                            top1_pct = sorted_dims[0][1] / total_vent * 100 if total_vent > 0 else 0
+                            if top1_pct > 40:
+                                parts.append(f"  ⚠️ *La {label} «{sorted_dims[0][0]}» représente à elle seule {top1_pct:.1f}% des recettes — forte dépendance.*")
+                        elif len(sorted_dims) == 1:
+                            parts.append(f"\n**{titre}** : Toutes les recettes proviennent de **{sorted_dims[0][0]}**.")
+                
+                # Analyse LIBELLE spécifique (top contributeurs par type de taxe)
+                if 'LIBELLE' in data[0] and val_col_vent and total_vent > 0:
+                    lib_totals = {}
+                    for row in data:
+                        key = row.get('LIBELLE', 'Non renseigné') or 'Non renseigné'
+                        val = float(row.get(val_col_vent, 0) or 0)
+                        lib_totals[key] = lib_totals.get(key, 0) + val
+                    
+                    sorted_libs = sorted(lib_totals.items(), key=lambda x: x[1], reverse=True)
+                    
+                    if len(sorted_libs) >= 2:
+                        if not has_ventilation:
+                            parts.append(f"\n\n**📊 Analyse détaillée par dimension**")
+                            has_ventilation = True
+                        
+                        parts.append(f"\n**📋 Principales taxes et impôts** ({len(sorted_libs)} libellés distincts) :")
+                        for i, (lib_name, lib_val) in enumerate(sorted_libs[:5]):
+                            pct = (lib_val / total_vent * 100)
+                            parts.append(f"  {'▸' if i > 0 else '▹'} **{lib_name}** — {lib_val:,.0f} FCFA ({pct:.1f}%)")
+                        
+                        # Top 3 représentent X% du total
+                        top3_val = sum(v for _, v in sorted_libs[:3])
+                        top3_pct = top3_val / total_vent * 100 if total_vent > 0 else 0
+                        parts.append(f"  💡 *Les 3 premiers types de taxes représentent **{top3_pct:.1f}%** des recettes totales.*")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # 6. ANALYSES COMPLÉMENTAIRES (depuis statistiques pré-calculées)
+            # ═══════════════════════════════════════════════════════════════
             if analyses_complementaires:
+                has_complementaires = False
+                
                 if 'repartition_nature' in analyses_complementaires and analyses_complementaires['repartition_nature']:
-                    natures = [r.get('NATURE', '') for r in analyses_complementaires['repartition_nature'][:3] if r.get('NATURE')]
-                    if natures:
-                        parts.append(f"Les principales natures d'impôts concernées sont : {', '.join(natures)}.")
+                    has_complementaires = True
+                    natures = analyses_complementaires['repartition_nature'][:5]
+                    nature_names = [r.get('NATURE', '') for r in natures if r.get('NATURE')]
+                    if nature_names:
+                        parts.append(f"\n\n**🏷️ Ventilation par nature d'impôt :** Les principales natures concernées sont : **{', '.join(nature_names[:3])}**. Cette diversification des sources fiscales est {'un facteur de résilience' if len(nature_names) > 3 else 'à surveiller pour éviter une dépendance excessive'}.")
+                
+                if 'repartition_direction' in analyses_complementaires and analyses_complementaires['repartition_direction']:
+                    has_complementaires = True
+                    directions = analyses_complementaires['repartition_direction'][:3]
+                    dir_names = [r.get('DIRECTION', r.get('DIRECTION_REGIONALE', '')) for r in directions]
+                    dir_names = [d for d in dir_names if d]
+                    if dir_names:
+                        parts.append(f"**🗺️ Couverture géographique :** Les principales directions contributrices sont : **{', '.join(dir_names)}**.")
             
-            return " ".join(parts) if parts else f"Analyse des données en réponse à : {query}"
+            return "\n".join(parts) if parts else f"Analyse des données en réponse à : {query}"
             
         except Exception as e:
             logger.warning(f"Erreur génération analyse narrative: {e}")
@@ -1698,31 +1895,40 @@ Génère uniquement le code Python, sans explication.
         
         # DATA PRIORIT: Afficher le nombre EXACT d'enregistrements si disponible
         if kpis.get('nb_enregistrements_analyses'):
-            parts.append(f" **{kpis['nb_enregistrements_analyses']:,} enregistrements fiscaux** analysés")
+            parts.append(f"📋 **{kpis['nb_enregistrements_analyses']:,} enregistrements fiscaux** analysés")
         elif kpis.get('total_records'):
-            parts.append(f" **{kpis['total_records']} groupes** agrégés")
+            parts.append(f"📋 **{kpis['total_records']} groupes** agrégés")
         
-        if kpis.get('total_recouvre'):
-            parts.append(f" **Montant total recouvré** : {kpis['total_recouvre']:,.0f} FCFA")
+        if kpis.get('montant_declare'):
+            parts.append(f"💰 **Montant total déclaré** : {kpis['montant_declare']:,.0f} FCFA")
         
-        if kpis.get('moyenne_recouvre'):
-            parts.append(f"DATA **Moyenne par entité** : {kpis['moyenne_recouvre']:,.0f} FCFA ( = {kpis.get('ecart_type_recouvre', 0):,.0f})")
+        if kpis.get('montant_recouvre'):
+            parts.append(f"✅ **Montant total recouvré** : {kpis['montant_recouvre']:,.0f} FCFA")
         
         if kpis.get('taux_recouvrement'):
-            parts.append(f"TARGET **Taux de recouvrement global** : {kpis['taux_recouvrement']:.1f}% ({kpis.get('performance', 'N/A')})")
+            qualif = kpis.get('qualification_performance', '')
+            parts.append(f"📈 **Taux de recouvrement global** : {kpis['taux_recouvrement']:.1f}% — {qualif}")
         
-        if kpis.get('ecart_global'):
-            ecart = kpis['ecart_global']
+        if kpis.get('ecart'):
+            ecart = kpis['ecart']
             signe = '+' if ecart > 0 else ''
-            parts.append(f" **cart déclaré/recouvré** : {signe}{ecart:,.0f} FCFA")
+            parts.append(f"📊 **Écart déclaré/recouvré** : {signe}{ecart:,.0f} FCFA")
         
-        if kpis.get('concentration_top3_%'):
-            parts.append(f" **Concentration** : Top 3 représente {kpis['concentration_top3_%']:.1f}% du total")
+        if kpis.get('moyenne_par_entite'):
+            parts.append(f"📐 **Montant moyen par entité** : {kpis['moyenne_par_entite']:,.0f} FCFA")
         
-        if kpis.get('nb_entites_performantes') is not None:
-            nb = kpis['nb_entites_performantes']
-            pct = kpis.get('pct_entites_performantes', 0)
-            parts.append(f" **Entités performantes** : {nb} ({pct:.1f}% avec taux > 100%)")
+        if kpis.get('concentration_top3'):
+            pct = kpis['concentration_top3']
+            if pct > 50:
+                parts.append(f"⚠️ **Dépendance fiscale** : Les 3 premiers contribuables pèsent {pct:.1f}% des recettes — risque budgétaire")
+            else:
+                parts.append(f"⚖️ **Répartition des recettes** : Les 3 premiers représentent {pct:.1f}% du total")
+        
+        if kpis.get('valeur_max') and kpis.get('valeur_min'):
+            parts.append(f"📊 **Fourchette** : de {kpis['valeur_min']:,.0f} à {kpis['valeur_max']:,.0f} FCFA")
+        
+        if kpis.get('atteinte_objectif'):
+            parts.append(f"🎯 **Atteinte objectif** : {kpis['atteinte_objectif']:.1f}%")
         
         return "\n".join(parts) if parts else "Analyse des données fiscales"
     
@@ -2061,6 +2267,58 @@ Si aucune alerte: réponds []"""
                         if objectif > 0:
                             enriched['kpis']['atteinte_objectif'] = (total_r / objectif) * 100
                             enriched['kpis']['depassement_objectif'] = total_r - objectif
+                    
+                    # ══════════════════════════════════════════════════════════
+                    # 📊 KPIs AVANCÉS POUR DÉCIDEURS (concentration, dispersion, risques)
+                    # ══════════════════════════════════════════════════════════
+                    try:
+                        # Identifier la colonne de valeur principale
+                        main_val_key = recouvre_key or declare_key
+                        if main_val_key and len(execution_result) >= 3:
+                            values = [float(row.get(main_val_key, 0) or 0) for row in execution_result]
+                            values_sorted = sorted(values, reverse=True)
+                            total_val = sum(values)
+                            n = len(values)
+                            
+                            if total_val > 0:
+                                # Moyenne et écart-type
+                                moyenne = total_val / n
+                                variance = sum((v - moyenne) ** 2 for v in values) / n
+                                ecart_type = variance ** 0.5
+                                
+                                enriched['kpis']['moyenne_par_entite'] = moyenne
+                                enriched['kpis']['valeur_max'] = max(values)
+                                enriched['kpis']['valeur_min'] = min(values)
+                                
+                                # Concentration Top 3 (% poids des 3 premiers)
+                                top3_sum = sum(values_sorted[:3])
+                                enriched['kpis']['concentration_top3'] = (top3_sum / total_val) * 100
+                                
+                                # Qualification de la performance globale
+                                taux = enriched['kpis'].get('taux_recouvrement', 0)
+                                if taux >= 105:
+                                    enriched['kpis']['qualification_performance'] = 'SURPERFORMANCE'
+                                elif taux >= 95:
+                                    enriched['kpis']['qualification_performance'] = 'SATISFAISANTE'
+                                elif taux >= 80:
+                                    enriched['kpis']['qualification_performance'] = 'MODÉRÉE'
+                                elif taux > 0:
+                                    enriched['kpis']['qualification_performance'] = 'CRITIQUE'
+                    except Exception as e:
+                        logger.warning(f"⚠️ Erreur calcul KPIs avancés: {e}")
+                    
+                    # ══════════════════════════════════════════════════════════
+                    # 🎯 RECOMMANDATIONS STRATÉGIQUES AUTOMATIQUES (sans appel API)
+                    # ══════════════════════════════════════════════════════════
+                    try:
+                        enriched['recommandations_strategiques'] = self._generate_local_strategic_recommendations(
+                            enriched['kpis'], execution_result, query
+                        )
+                        enriched['alertes_decisionnelles'] = self._generate_local_alerts(
+                            enriched['kpis'], execution_result, query
+                        )
+                    except Exception as e:
+                        logger.warning(f"⚠️ Erreur recommandations locales: {e}")
                 
             return enriched
             
@@ -2083,6 +2341,165 @@ Si aucune alerte: réponds []"""
         else:
             return 'general'
     
+    def _generate_local_strategic_recommendations(self, kpis: Dict, data: list, query: str) -> list:
+        """🎯 Recommandations stratégiques pour décideurs (Ministre, DG) — SANS appel API"""
+        recommandations = []
+        
+        try:
+            taux = kpis.get('taux_recouvrement', 0)
+            total_declare = kpis.get('montant_declare', 0)
+            total_recouvre = kpis.get('montant_recouvre', 0)
+            concentration = kpis.get('concentration_top3', 0)
+            
+            # 1. Recommandation sur le taux de recouvrement
+            if 0 < taux < 80:
+                ecart_optimal = total_declare * 0.95 - total_recouvre
+                recommandations.append({
+                    'priorite': 'CRITIQUE',
+                    'domaine': 'Recouvrement',
+                    'action': 'Mettre en œuvre un plan de redressement fiscal d\'urgence',
+                    'detail': f"Le taux de {taux:.1f}% est très en deçà de la cible de 95%. Un gain de {ecart_optimal:,.0f} FCFA est possible en renforçant le contrôle et les relances.",
+                    'impact_estime': f"+{ecart_optimal:,.0f} FCFA",
+                    'responsable': 'Direction du Recouvrement'
+                })
+            elif 80 <= taux < 95:
+                ecart_optimal = total_declare * 0.95 - total_recouvre
+                recommandations.append({
+                    'priorite': 'HAUTE',
+                    'domaine': 'Optimisation',
+                    'action': 'Renforcer les procédures de relance et de suivi des contribuables défaillants',
+                    'detail': f"Un effort ciblé permettrait de récupérer jusqu'à {ecart_optimal:,.0f} FCFA supplémentaires pour atteindre le taux cible de 95%.",
+                    'impact_estime': f"+{ecart_optimal:,.0f} FCFA",
+                    'responsable': 'Bureaux de recouvrement'
+                })
+            elif taux >= 105:
+                recommandations.append({
+                    'priorite': 'MOYENNE',
+                    'domaine': 'Bonnes pratiques',
+                    'action': 'Documenter et capitaliser les facteurs de surperformance',
+                    'detail': f"Le surplus de {total_recouvre - total_declare:,.0f} FCFA (taux {taux:.1f}%) traduit une efficacité remarquable. Identifier et diffuser les bonnes pratiques.",
+                    'impact_estime': 'Pérennisation de la performance',
+                    'responsable': 'Direction de la Stratégie'
+                })
+            
+            # 2. Recommandation sur la concentration
+            if concentration > 50:
+                recommandations.append({
+                    'priorite': 'HAUTE',
+                    'domaine': 'Risque systémique',
+                    'action': 'Diversifier l\'assiette fiscale pour réduire la dépendance aux grands contribuables',
+                    'detail': f"Avec {concentration:.1f}% du total concentré sur 3 entités, une défaillance d'un seul grand contribuable menacerait l'équilibre budgétaire.",
+                    'impact_estime': 'Réduction du risque fiscal',
+                    'responsable': 'Direction de la Politique Fiscale'
+                })
+            
+            # 3. Recommandation sur les disparités entre entités
+            val_max = kpis.get('valeur_max', 0)
+            val_min = kpis.get('valeur_min', 0)
+            if val_max > 0 and val_min > 0 and val_max / val_min > 10:
+                recommandations.append({
+                    'priorite': 'MOYENNE',
+                    'domaine': 'Équité territoriale',
+                    'action': 'Analyser les causes des disparités entre entités et renforcer les bureaux sous-performants',
+                    'detail': f"Le plus gros contributeur ({val_max:,.0f} FCFA) rapporte {val_max/val_min:.0f} fois plus que le plus petit ({val_min:,.0f} FCFA). Un rééquilibrage des moyens pourrait améliorer la performance globale.",
+                    'impact_estime': 'Harmonisation des performances',
+                    'responsable': 'Direction de l\'Administration'
+                })
+            
+            # 4. Recommandation basée sur le contexte de la requête
+            query_lower = query.lower()
+            if any(w in query_lower for w in ['contribuable', 'top', 'plus grand']):
+                recommandations.append({
+                    'priorite': 'HAUTE',
+                    'domaine': 'Gestion des grands comptes',
+                    'action': 'Mettre en place un suivi personnalisé des principaux contribuables identifiés',
+                    'detail': 'Désigner un gestionnaire de compte dédié pour chacun des 10 premiers contribuables afin de sécuriser les recettes et anticiper les risques de défaillance.',
+                    'impact_estime': 'Sécurisation des recettes principales',
+                    'responsable': 'Direction des Grandes Entreprises'
+                })
+            
+            if not recommandations:
+                recommandations.append({
+                    'priorite': 'INFO',
+                    'domaine': 'Suivi général',
+                    'action': 'Maintenir la veille sur les indicateurs de performance fiscale',
+                    'detail': 'Les indicateurs actuels sont dans les normes. Continuer le suivi périodique pour détecter toute déviation.',
+                    'impact_estime': 'Maintien de la performance',
+                    'responsable': 'Direction Générale'
+                })
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Erreur recommandations locales: {e}")
+        
+        return recommandations
+    
+    def _generate_local_alerts(self, kpis: Dict, data: list, query: str) -> list:
+        """🚨 Alertes décisionnelles automatiques — SANS appel API"""
+        alertes = []
+        
+        try:
+            taux = kpis.get('taux_recouvrement', 0)
+            total_declare = kpis.get('montant_declare', 0)
+            total_recouvre = kpis.get('montant_recouvre', 0)
+            concentration = kpis.get('concentration_top3', 0)
+            
+            # Alerte taux de recouvrement
+            if 0 < taux < 80:
+                perte = total_declare - total_recouvre
+                alertes.append({
+                    'niveau': 'CRITIQUE',
+                    'icone': '🔴',
+                    'titre': 'Taux de recouvrement critique',
+                    'message': f"Le taux de recouvrement de {taux:.1f}% est alarmant. Perte potentielle : {perte:,.0f} FCFA.",
+                    'action_requise': 'Intervention immédiate de la Direction Générale'
+                })
+            elif 80 <= taux < 90:
+                perte = total_declare - total_recouvre
+                alertes.append({
+                    'niveau': 'ATTENTION',
+                    'icone': '🟠',
+                    'titre': 'Taux de recouvrement sous-optimal',
+                    'message': f"Le taux de {taux:.1f}% est en deçà de l'objectif de 95%. Manque à gagner : {perte:,.0f} FCFA.",
+                    'action_requise': 'Plan d\'action correctif requis'
+                })
+            
+            # Alerte concentration
+            if concentration > 60:
+                alertes.append({
+                    'niveau': 'ATTENTION',
+                    'icone': '⚠️',
+                    'titre': 'Risque de concentration fiscale',
+                    'message': f"Les 3 premières entités représentent {concentration:.1f}% du total. Risque systémique en cas de défaillance.",
+                    'action_requise': 'Stratégie de diversification de l\'assiette'
+                })
+            
+            # Alerte montant élevé
+            if total_recouvre and total_recouvre > 10_000_000_000:
+                alertes.append({
+                    'niveau': 'INFO',
+                    'icone': '📊',
+                    'titre': 'Volume significatif de recettes',
+                    'message': f"Le volume de {total_recouvre:,.0f} FCFA représente un enjeu budgétaire majeur nécessitant un suivi renforcé.",
+                    'action_requise': 'Rapport de suivi mensuel au Ministre'
+                })
+            
+            # Alerte disparité
+            val_max = kpis.get('valeur_max', 0)
+            val_min = kpis.get('valeur_min', 0)
+            if val_max > 0 and val_min > 0 and val_max / val_min > 20:
+                alertes.append({
+                    'niveau': 'ATTENTION',
+                    'icone': '📉',
+                    'titre': 'Forte disparité entre entités',
+                    'message': f"L'écart entre le plus gros contribuable ({val_max:,.0f} FCFA) et le plus petit ({val_min:,.0f} FCFA) est considérable, révélant des déséquilibres structurels importants.",
+                    'action_requise': 'Audit des entités sous-performantes'
+                })
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Erreur alertes locales: {e}")
+        
+        return alertes
+    
     def _fix_polars_syntax(self, code: str) -> str:
         """🔧 Corrige automatiquement les erreurs de syntaxe Polars courantes"""
         import re
@@ -2102,6 +2519,89 @@ Si aucune alerte: réponds []"""
             code
         )
         
+        # 3. Fix OR operator precedence in .filter()
+        # Detect: ... & (condition) | (pl.col(...).is_null()) without proper grouping
+        # The | must be grouped with the preceding condition using outer parentheses
+        code = re.sub(
+            r'(\(pl\.col\([^)]+\)\.[^)]+\))\s*\|\s*(\(pl\.col\([^)]+\)\.is_null\(\)\))',
+            r'(\1 | \2)',
+            code
+        )
+        
+        # 4. Fix column name DIRECTION_REGIONALE → DIRECTION (actual parquet column name)
+        code = code.replace("'DIRECTION_REGIONALE'", "'DIRECTION'")
+        code = code.replace('"DIRECTION_REGIONALE"', '"DIRECTION"')
+        
+        # 5. Fix column name TYPE_IMPOT_TAXE → TAXE_IMPOT_CD (actual parquet column name)
+        code = code.replace("'TYPE_IMPOT_TAXE'", "'TAXE_IMPOT_CD'")
+        code = code.replace('"TYPE_IMPOT_TAXE"', '"TAXE_IMPOT_CD"')
+        
+        # 6. Fix TODAY - pl.duration(days=N) → pl.lit(TODAY - timedelta(days=N))
+        # TODAY is a Python date, can't subtract a Polars duration from it
+        code = re.sub(
+            r'TODAY\s*-\s*pl\.duration\(days\s*=\s*(\d+)\)',
+            r'pl.lit(TODAY - timedelta(days=\1))',
+            code
+        )
+        # Also fix: pl.lit(TODAY) - pl.duration(days=N) → pl.lit(TODAY - timedelta(days=N))
+        code = re.sub(
+            r'pl\.lit\(TODAY\)\s*-\s*pl\.duration\(days\s*=\s*(\d+)\)',
+            r'pl.lit(TODAY - timedelta(days=\1))',
+            code
+        )
+        
+        # 7. Ensure timedelta import exists if used
+        if 'timedelta' in code and 'from datetime import' not in code and 'import datetime' not in code:
+            code = 'from datetime import timedelta\n' + code
+        
+        return code
+    
+    def _fix_duplicate_columns(self, code: str) -> str:
+        """🔧 Corrige automatiquement les DuplicateError Polars.
+        Supprime les colonnes dans .agg() qui sont déjà présentes dans .group_by().
+        Gère aussi les .select() avec doublons après .with_columns().
+        """
+        import re
+        
+        try:
+            # 1. Trouver les colonnes dans group_by
+            gb_matches = re.findall(r"\.group_by\(\[?([^\]\)]+)\]?\)", code)
+            if not gb_matches:
+                # Pas de group_by → vérifier si .select() ou .with_columns() crée des doublons
+                # Quand il n'y a pas de group_by, les colonnes BUREAU, SOURCE etc. existent déjà
+                # Supprimer les .with_columns() ou .select() qui re-créent des colonnes existantes
+                native_cols = ['BUREAU', 'SOURCE', 'DIRECTION', 'LIBELLE', 
+                              'NATURE', 'CATEGORIE', 'TAXE_IMPOT_CD', 'ID_CONTRIBUABLE']
+                for col_name in native_cols:
+                    # Supprimer pl.col('COL').first().alias('COL') ou pl.col('COL').alias('COL') hors agg
+                    pattern = rf",?\s*pl\.col\(['\"{col_name}['\"]\)\.first\(\)\.alias\(['\"][^'\"]*['\"]\)"
+                    code = re.sub(pattern, '', code)
+                return code
+            
+            # 2. Extraire les noms de colonnes du group_by
+            gb_text = gb_matches[0]
+            gb_cols = re.findall(r"['\"]([^'\"]+)['\"]", gb_text)
+            
+            if not gb_cols:
+                return code
+            
+            # 3. Pour chaque colonne du group_by, supprimer son .first().alias() dans .agg()
+            for col_name in gb_cols:
+                # Pattern: pl.col('COL').first().alias('COL') ou pl.col('COL').first().alias('AUTRE')
+                pattern = rf",?\s*pl\.col\(['\"{col_name}['\"]\)\.first\(\)\.alias\(['\"][^'\"]*['\"]\)"
+                code = re.sub(pattern, '', code)
+                # Pattern variante: pl.col("COL").first().alias("COL")
+                pattern2 = rf"pl\.col\(['\"{col_name}['\"]\)\.first\(\)\.alias\(['\"][^'\"]*['\"]\),?\s*"
+                code = re.sub(pattern2, '', code)
+            
+            # 4. Nettoyer les virgules orphelines dans .agg([, ...]) ou .agg([..., ])
+            code = re.sub(r'\.agg\(\[\s*,', '.agg([', code)
+            code = re.sub(r',\s*\]\)', '])', code)
+            code = re.sub(r',\s*,', ',', code)
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Erreur fix_duplicate_columns: {e}")
+        
         return code
     
     def _execute_code(self, code: str) -> Any:
@@ -2109,6 +2609,9 @@ Si aucune alerte: réponds []"""
         try:
             # 🔧 PRÉ-TRAITEMENT: Corriger les erreurs de syntaxe Polars courantes
             code = self._fix_polars_syntax(code)
+            
+            # 🔧 PRÉ-TRAITEMENT: Supprimer les colonnes dupliquées (group_by + agg)
+            code = self._fix_duplicate_columns(code)
             
             # Charger les données directement
             data_path = "srmt_data_2020_2025.parquet"
@@ -2124,6 +2627,7 @@ Si aucune alerte: réponds []"""
                 'data': data,
                 'datetime': datetime,
                 'date': date,
+                'timedelta': timedelta,
                 'TODAY': date.today(),
             }
             
@@ -2292,6 +2796,27 @@ Si aucune alerte: réponds []"""
                 error_msg += "OK CORRECT: resultat = query.collect().to_dicts()\n"
                 error_msg += "OK CORRECT: if len(resultat) > 0:\n"
                 error_msg += f"Erreur complète: {error_details}"
+                logger.error(error_msg)
+            
+            # Détection DuplicateError (colonne dupliquée dans group_by + agg)
+            elif 'DuplicateError' in error_type or 'has more than one occurrence' in error_details:
+                # Tentative de correction automatique
+                fixed_code = self._fix_duplicate_columns(code)
+                if fixed_code != code:
+                    logger.info("🔧 Correction automatique DuplicateError: suppression colonnes dupliquées")
+                    fix_result = self._execute_code(fixed_code)
+                    if not (isinstance(fix_result, str) and fix_result.startswith("Erreur")):
+                        return fix_result
+                
+                # Extraire le nom de la colonne dupliquée
+                dup_col = re.search(r"column with name '(\w+)' has more than one occurrence", error_details)
+                dup_col_name = dup_col.group(1) if dup_col else 'INCONNUE'
+                correction = f"Supprimer pl.col('{dup_col_name}').first().alias('{dup_col_name}') du .agg() car '{dup_col_name}' est déjà dans group_by() ou existe déjà"
+                error_msg = f"Erreur d'exécution: DuplicateError - La colonne '{dup_col_name}' apparaît en double\n"
+                error_msg += f"CORRECTION: {correction}\n"
+                error_msg += "❗ RÈGLE: NE JAMAIS mettre dans .agg() une colonne qui est DÉJÀ dans group_by()\n"
+                error_msg += f"INTERDIT: .group_by('{dup_col_name}').agg([..., pl.col('{dup_col_name}').first().alias('{dup_col_name}')])\n"
+                error_msg += f"CORRECT: .group_by('{dup_col_name}').agg([...]) — {dup_col_name} apparaît automatiquement dans le résultat"
                 logger.error(error_msg)
             
             # Détection erreur de date Polars
@@ -3040,73 +3565,185 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
                 html += `<h3 class="text-2xl font-bold text-white mb-4">${analysis.titre}</h3>`;
             }
             
-            //  ANALYSE RSUME NARRATIVE (au-dessus des KPIs)
+            //  ANALYSE RSUME NARRATIVE (briefing décisionnel complet)
             if (analysis.analyse_resume) {
-                html += `<div class="bg-gradient-to-r from-indigo-900 to-blue-900 bg-opacity-40 p-5 rounded-lg border-l-4 border-indigo-400 mb-4">
-                    <h4 class="font-semibold text-indigo-200 mb-3 flex items-center">
-                        <i class="fas fa-brain mr-2"></i>Analyse Résumée
-                    </h4>
-                    <p class="text-white leading-relaxed text-base" style="line-height: 1.7;">${analysis.analyse_resume}</p>
-                </div>`;
-            }
-            
-            // Synthèse exécutive
-            if (analysis.synthese_executive) {
-                html += `<div class="bg-blue-900 bg-opacity-30 p-4 rounded-lg border border-blue-500">
-                    <h4 class="font-semibold text-blue-200 mb-2"><i class="fas fa-star mr-2"></i>Synthèse Exécutive</h4>
-                    <div class="text-white whitespace-pre-line">${analysis.synthese_executive}</div>
-                </div>`;
-            }
-            
-            // KPIs
-            if (analysis.kpis && Object.keys(analysis.kpis).length > 0) {
-                html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-4">';
+                // Convertir le markdown basique en HTML
+                let resumeHtml = analysis.analyse_resume
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n\n/g, '</p><p class="mt-3">')
+                    .replace(/\n/g, '<br>');
                 
-                const kpiLabels = {
-                    'montant_declare': 'Montant Déclaré',
-                    'montant_recouvre': 'Montant Recouvré',
-                    'attendu_mensuel': 'Attendu Mensuel',
-                    'objectif': 'Objectif',
-                    'taux_recouvrement': 'Taux Recouvrement',
-                    'atteinte_objectif': 'Atteinte Objectif',
-                    'ecart': 'cart Positif',
-                    'depassement_objectif': 'Dépassement Objectif',
-                    'total_records': 'Enregistrements'
+                html += `<div class="bg-gradient-to-r from-indigo-900 to-blue-900 bg-opacity-40 p-6 rounded-lg border-l-4 border-indigo-400 mb-4">
+                    <h4 class="font-bold text-indigo-200 mb-4 flex items-center text-lg">
+                        <i class="fas fa-brain mr-2"></i>📋 Briefing Décisionnel
+                    </h4>
+                    <div class="text-white leading-relaxed text-base" style="line-height: 1.8;"><p>${resumeHtml}</p></div>
+                </div>`;
+            }
+            
+            // 🚨 ALERTES DÉCISIONNELLES (nouveau - affiché en premier si critique)
+            if (analysis.alertes_decisionnelles && analysis.alertes_decisionnelles.length > 0) {
+                html += `<div class="rounded-lg border-2 border-red-500 border-opacity-50 p-5 mb-4" style="background: rgba(220, 38, 38, 0.08);">
+                    <h4 class="font-bold text-red-300 mb-4 text-lg flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>🚨 Alertes pour la Prise de Décision
+                    </h4>
+                    <div class="space-y-3">`;
+                
+                analysis.alertes_decisionnelles.forEach(alerte => {
+                    const bgColor = alerte.niveau === 'CRITIQUE' ? 'bg-red-900 bg-opacity-40 border-red-500' : 
+                                    alerte.niveau === 'ATTENTION' ? 'bg-orange-900 bg-opacity-30 border-orange-500' : 
+                                    'bg-blue-900 bg-opacity-20 border-blue-500';
+                    const textColor = alerte.niveau === 'CRITIQUE' ? 'text-red-200' : 
+                                     alerte.niveau === 'ATTENTION' ? 'text-orange-200' : 'text-blue-200';
+                    html += `<div class="${bgColor} p-4 rounded-lg border-l-4">
+                        <div class="flex items-start">
+                            <span class="text-2xl mr-3">${alerte.icone || '⚠️'}</span>
+                            <div class="flex-1">
+                                <h5 class="${textColor} font-bold mb-1">${alerte.niveau} — ${alerte.titre}</h5>
+                                <p class="text-white text-sm mb-2">${alerte.message}</p>
+                                <p class="text-gray-300 text-xs italic"><i class="fas fa-arrow-right mr-1"></i>${alerte.action_requise}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div></div>';
+            }
+            
+            // Indicateurs Clés (KPIs enrichis)
+            if (analysis.kpis && Object.keys(analysis.kpis).length > 0) {
+                html += `<div class="mb-4">
+                    <h4 class="font-bold text-blue-200 mb-3 text-lg flex items-center">
+                        <i class="fas fa-chart-bar mr-2"></i>📊 Indicateurs Clés de Performance
+                    </h4>`;
+                html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">';
+                
+                const kpiConfig = {
+                    'montant_declare': { label: '💰 Total Déclaré', color: 'blue', icon: 'fas fa-file-invoice-dollar' },
+                    'montant_recouvre': { label: '✅ Total Recouvré', color: 'green', icon: 'fas fa-coins' },
+                    'attendu_mensuel': { label: '📅 Attendu Mensuel', color: 'purple', icon: 'fas fa-calendar-alt' },
+                    'objectif': { label: '🎯 Objectif', color: 'indigo', icon: 'fas fa-bullseye' },
+                    'taux_recouvrement': { label: '📈 Taux de Recouvrement', color: 'cyan', icon: 'fas fa-percentage' },
+                    'atteinte_objectif': { label: '🏆 Atteinte Objectif', color: 'yellow', icon: 'fas fa-trophy' },
+                    'ecart': { label: '📊 Écart Déclaré / Recouvré', color: 'orange', icon: 'fas fa-exchange-alt' },
+                    'depassement_objectif': { label: '🚀 Dépassement Objectif', color: 'emerald', icon: 'fas fa-rocket' },
+                    'moyenne_par_entite': { label: '📐 Montant Moyen / Entité', color: 'sky', icon: 'fas fa-chart-line' },
+                    'concentration_top3': { label: '⚖️ Poids des 3 Premiers', color: 'amber', icon: 'fas fa-balance-scale' },
+                    'valeur_max': { label: '🔺 Plus Gros Contributeur', color: 'green', icon: 'fas fa-arrow-up' },
+                    'valeur_min': { label: '🔻 Plus Petit Contributeur', color: 'red', icon: 'fas fa-arrow-down' },
+                    'nb_enregistrements_analyses': { label: '📋 Opérations Analysées', color: 'slate', icon: 'fas fa-database' }
                 };
                 
-                // Ordre d'affichage préféré
                 const kpiOrder = ['montant_declare', 'montant_recouvre', 'attendu_mensuel', 'objectif', 
-                                  'taux_recouvrement', 'atteinte_objectif', 'ecart', 'depassement_objectif'];
+                                  'taux_recouvrement', 'atteinte_objectif', 'ecart', 'depassement_objectif',
+                                  'moyenne_par_entite', 'concentration_top3', 'valeur_max', 'valeur_min', 'nb_enregistrements_analyses'];
                 
-                // Afficher dans l'ordre préféré
                 for (let key of kpiOrder) {
                     if (analysis.kpis[key] !== undefined && analysis.kpis[key] !== null) {
                         let value = analysis.kpis[key];
                         let displayValue = value;
+                        let config = kpiConfig[key] || { label: key, color: 'gray', icon: 'fas fa-info-circle' };
+                        
                         if (typeof value === 'number') {
-                            if (key.includes('taux') || key.includes('atteinte')) {
+                            if (key.includes('taux') || key.includes('atteinte') || key.includes('concentration')) {
                                 displayValue = value.toFixed(1) + '%';
-                            } else if (key !== 'total_records') {
-                                displayValue = value.toLocaleString('fr-FR', {maximumFractionDigits: 0}) + ' FCFA';
-                            } else {
+                            } else if (key === 'nb_enregistrements_analyses' || key === 'total_records') {
                                 displayValue = value.toLocaleString('fr-FR');
+                            } else {
+                                displayValue = value.toLocaleString('fr-FR', {maximumFractionDigits: 0}) + ' FCFA';
                             }
                         }
                         
-                        html += `<div class="glass rounded-lg p-3">
-                            <div class="text-blue-200 text-xs mb-1">${kpiLabels[key] || key}</div>
+                        // Qualification couleur dynamique pour taux
+                        let valueBgClass = 'bg-gray-800 bg-opacity-50';
+                        if (key === 'taux_recouvrement' || key === 'atteinte_objectif') {
+                            if (value >= 100) valueBgClass = 'bg-green-900 bg-opacity-40 border border-green-600';
+                            else if (value >= 90) valueBgClass = 'bg-green-900 bg-opacity-20';
+                            else if (value >= 80) valueBgClass = 'bg-yellow-900 bg-opacity-30 border border-yellow-600';
+                            else valueBgClass = 'bg-red-900 bg-opacity-40 border border-red-600';
+                        }
+                        if (key === 'concentration_top3') {
+                            if (value > 50) valueBgClass = 'bg-red-900 bg-opacity-30 border border-red-600';
+                            else if (value > 30) valueBgClass = 'bg-yellow-900 bg-opacity-20';
+                            else valueBgClass = 'bg-green-900 bg-opacity-20';
+                        }
+                        if (key === 'valeur_max') valueBgClass = 'bg-green-900 bg-opacity-30';
+                        if (key === 'valeur_min') valueBgClass = 'bg-orange-900 bg-opacity-20';
+                        
+                        html += `<div class="${valueBgClass} rounded-lg p-3">
+                            <div class="text-blue-200 text-xs mb-1 flex items-center">
+                                <i class="${config.icon} mr-1 text-xs"></i>${config.label}
+                            </div>
                             <div class="text-white font-bold text-lg">${displayValue}</div>
                         </div>`;
                     }
                 }
                 
-                html += '</div>';
+                // Qualification de la performance globale
+                if (analysis.kpis.qualification_performance) {
+                    const qualifColors = {
+                        'SURPERFORMANCE': 'bg-green-600',
+                        'SATISFAISANTE': 'bg-green-500',
+                        'MODÉRÉE': 'bg-yellow-500',
+                        'CRITIQUE': 'bg-red-600'
+                    };
+                    const qualifColor = qualifColors[analysis.kpis.qualification_performance] || 'bg-gray-500';
+                    html += `<div class="col-span-2 md:col-span-4 flex justify-center">
+                        <span class="${qualifColor} text-white px-6 py-2 rounded-full font-bold text-sm tracking-wider">
+                            PERFORMANCE GLOBALE : ${analysis.kpis.qualification_performance}
+                        </span>
+                    </div>`;
+                }
+                
+                html += '</div></div>';
             }
             
-            // Recommandations
+            // 🎯 RECOMMANDATIONS STRATÉGIQUES POUR DÉCIDEURS (nouveau)
+            if (analysis.recommandations_strategiques && analysis.recommandations_strategiques.length > 0) {
+                html += `<div class="rounded-lg border-2 border-yellow-500 border-opacity-40 p-5 mb-4" style="background: rgba(234, 179, 8, 0.05);">
+                    <h4 class="font-bold text-yellow-200 mb-4 text-lg flex items-center">
+                        <i class="fas fa-bullseye mr-2"></i>🎯 Recommandations Stratégiques
+                    </h4>
+                    <div class="space-y-4">`;
+                
+                analysis.recommandations_strategiques.forEach((reco, index) => {
+                    const priorityConfig = {
+                        'CRITIQUE': { bg: 'bg-red-900 bg-opacity-30', border: 'border-red-500', badge: 'bg-red-600', icon: '🔥' },
+                        'HAUTE': { bg: 'bg-orange-900 bg-opacity-20', border: 'border-orange-500', badge: 'bg-orange-600', icon: '⚡' },
+                        'MOYENNE': { bg: 'bg-yellow-900 bg-opacity-15', border: 'border-yellow-500', badge: 'bg-yellow-600', icon: '📌' },
+                        'INFO': { bg: 'bg-blue-900 bg-opacity-15', border: 'border-blue-500', badge: 'bg-blue-600', icon: 'ℹ️' }
+                    };
+                    const config = priorityConfig[reco.priorite] || priorityConfig['MOYENNE'];
+                    
+                    html += `<div class="${config.bg} ${config.border} border-l-4 p-4 rounded-lg">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center">
+                                <span class="${config.badge} text-white text-xs px-2 py-1 rounded-full font-bold mr-2">${config.icon} ${reco.priorite}</span>
+                                <span class="text-gray-300 text-xs"><i class="fas fa-tag mr-1"></i>${reco.domaine || ''}</span>
+                            </div>
+                            <span class="text-gray-400 text-xs"><i class="fas fa-user-tie mr-1"></i>${reco.responsable || ''}</span>
+                        </div>
+                        <h5 class="text-white font-semibold mb-1">${reco.action}</h5>
+                        <p class="text-gray-300 text-sm mb-2">${reco.detail || ''}</p>
+                        <div class="flex items-center text-xs">
+                            <span class="bg-green-900 bg-opacity-40 text-green-300 px-2 py-1 rounded"><i class="fas fa-chart-line mr-1"></i>Impact : ${reco.impact_estime || 'À évaluer'}</span>
+                        </div>
+                    </div>`;
+                });
+                html += '</div></div>';
+            }
+            
+            // Synthèse exécutive (indicateurs textuels)
+            if (analysis.synthese_executive) {
+                html += `<div class="bg-blue-900 bg-opacity-30 p-4 rounded-lg border border-blue-500">
+                    <h4 class="font-semibold text-blue-200 mb-2"><i class="fas fa-star mr-2"></i>Indicateurs Détaillés</h4>
+                    <div class="text-white whitespace-pre-line text-sm">${analysis.synthese_executive}</div>
+                </div>`;
+            }
+            
+            // Recommandations IA (si activées)
             if (analysis.recommandations && analysis.recommandations.length > 0) {
                 html += `<div class="bg-green-900 bg-opacity-20 p-4 rounded-lg border border-green-500">
-                    <h4 class="font-semibold text-green-200 mb-3"><i class="fas fa-lightbulb mr-2"></i>Recommandations</h4>
+                    <h4 class="font-semibold text-green-200 mb-3"><i class="fas fa-lightbulb mr-2"></i>Recommandations Complémentaires</h4>
                     <ul class="space-y-2">`;
                 
                 analysis.recommandations.forEach(rec => {
@@ -3123,7 +3760,7 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
                 html += '</ul></div>';
             }
             
-            // Alertes
+            // Alertes IA (si activées)
             if (analysis.alertes && analysis.alertes.length > 0) {
                 html += `<div class="bg-red-900 bg-opacity-30 p-4 rounded-lg border border-red-500">
                     <h4 class="font-semibold text-red-200 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Alertes</h4>
