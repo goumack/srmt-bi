@@ -3411,13 +3411,13 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
                     <span class="hidden sm:inline"></span>
                     <span class="flex items-center">
                         <i class="fas fa-shield-check mr-1 text-green-400"></i>
-                        Système sécurisé
+                        Système sécurisé avec nvidia 
                     </span>
                 </div>
                 <div class="flex items-center space-x-4 text-xs text-blue-300">
                     <span>Version 2.0</span>
                     <span></span>
-                    <span>Powered by NVIDIA AI</span>
+                    <span>Powered by ACCEL-TECH</span>
                 </div>
             </div>
         </div>
