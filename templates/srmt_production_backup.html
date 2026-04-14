@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRMT Business Intelligence Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #1a1a1a;
+            --dark-light: #2d2d2d;
+            --light: #f8f9fa;
+            --border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #1a1a1a;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glass Morphism Premium */
+        .glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 40px var(--shadow), 0 1px 3px var(--shadow);
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px var(--shadow-lg), 0 8px 16px var(--shadow);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Text gradient */
+        .bg-clip-text {
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Animations fluides */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Icônes Premium */
+        .icon-gradient {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
+        }
+
+        /* Animation icône hero */
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1);
+                filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+            }
+            50% { 
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 40px rgba(139, 92, 246, 0.5));
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .animate-slide-in {
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        /* Header Premium */
+        .modern-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(30px) saturate(180%);
+            border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        /* Stats Cards modernes */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 24px;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Input Premium */
+        .modern-input {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(203, 213, 225, 0.5);
+            border-radius: 16px;
+            padding: 18px 24px;
+            color: #1e293b;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+        }
+
+        .modern-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15),
+                        0 10px 40px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .modern-input::placeholder {
+            color: #94a3b8;
+        }
+
+        /* Buttons modernes */
+        .btn-modern {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            box-shadow: 0 4px 24px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            color: #1e293b;
+            border: 2px solid rgba(203, 213, 225, 0.5);
+            flex-direction: row;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .btn-ghost:hover {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Badge moderne */
+        .badge-modern {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-warning {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        /* Hero Premium */
+        .hero-title {
+            font-size: 56px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .hero-title .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(10deg); }
+        }
+
+        /* Loading spinner moderne */
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Results Premium */
+        .result-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(203, 213, 225, 0.4);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 12px 48px var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 12px 48px var(--shadow-lg);
+        }
+
+        /* Table moderne */
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+        }
+
+        .modern-table thead th {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            color: #1e293b;
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .modern-table thead th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .modern-table thead th:last-child {
+            border-top-right-radius: 8px;
+        }
+
+        .modern-table tbody tr {
+            background: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s;
+        }
+
+        .modern-table tbody tr:hover {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            transform: scale(1.01);
+        }
+
+        .modern-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        /* Scrollbar personnalisé */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stat-card {
+                padding: 16px !important;
+            }
+            
+            .modern-input {
+                font-size: 16px; /* Empêche le zoom sur mobile */
+            }
+
+            .btn-modern {
+                padding: 10px 20px;
+                font-size: 13px;
+            }
+        }
+
+        /* Code section */
+        .code-block {
+            background: #1a1a1a;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Premium -->
+    <header class="modern-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold flex items-center gap-3">
+                            <span class="icon-gradient">SRMT Intelligence</span>
+                            <!-- Drapeau Sénégal -->
+                            <div class="inline-flex rounded-lg overflow-hidden shadow-xl animate-pulse" style="width: 50px; height: 35px; border: 2px solid #1e293b;">
+                                <div style="width: 33.33%; background: #00853F;"></div>
+                                <div style="width: 33.33%; background: #FDEF42; position: relative; display: flex; align-items: center; justify-content: center;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" style="position: absolute;">
+                                        <path fill="#00853F" d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.9 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/>
+                                    </svg>
+                                </div>
+                                <div style="width: 33.33%; background: #E31B23;"></div>
+                            </div>
+                        </h1>
+                        <p class="text-sm text-slate-600 font-medium">Plateforme d'Analyse Avancée</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" style="position: relative; z-index: 1;">
+        <!-- Hero Section Premium -->
+        <div class="text-center mb-12 animate-fade-in">
+            <div class="mb-6 inline-block">
+                <i class="fas fa-robot text-8xl icon-gradient" style="animation: pulse 2s ease-in-out infinite;"></i>
+            </div>
+            <h1 class="hero-title">
+                Assistant IA <span class="gradient-text">Intelligent</span>
+            </h1>
+            <p class="text-xl text-slate-600 max-w-2xl mx-auto mb-2 font-medium">
+                Posez vos questions en langage naturel
+            </p>
+            <p class="text-slate-500 max-w-2xl mx-auto">
+                Analysez instantanément vos données fiscales et douanières avec l'intelligence artificielle
+            </p>
+        </div>
+
+        <!-- Interface de requête IA -->
+        <div class="glass-card p-8 sm:p-10 mb-8 animate-slide-in max-w-4xl mx-auto">
+            <!-- Search Bar Premium -->
+            <div class="mb-8">
+                <div class="relative">
+                    <div class="absolute left-6 top-1/2 transform -translate-y-1/2">
+                        <i class="fas fa-search text-2xl icon-gradient"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="queryInput" 
+                        placeholder="Ex: Quels sont les 10 plus gros contribuables ?" 
+                        class="modern-input pl-20 pr-40 py-5 text-base"
+                        style="font-size: 16px; box-shadow: 0 4px 24px rgba(59, 130, 246, 0.08);">
+                    <button 
+                        id="analyzeBtn" 
+                        class="btn-modern btn-primary absolute right-3 top-1/2 transform -translate-y-1/2 py-4 px-6">
+                        <i class="fas fa-magic"></i>
+                        <span class="font-bold">Analyser</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Actions Premium -->
+            <div>
+                <div class="flex items-center justify-between mb-5">
+                    <p class="text-slate-700 text-base font-bold flex items-center gap-2">
+                        <i class="fas fa-bolt text-yellow-500"></i>
+                        Analyses rapides
+                    </p>
+                    <span class="text-xs text-slate-500 font-medium">Cliquez pour démarrer</span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button id="btnTop" class="btn-modern btn-ghost text-sm py-5 flex-col gap-3 hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-trophy text-3xl text-yellow-500"></i>
+                        <span class="font-semibold">Top contribuables</span>
+                    </button>
+                    <button id="btnEvolution" class="btn-modern btn-ghost text-sm py-5 flex-col gap-3 hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-chart-line text-3xl text-green-500"></i>
+                        <span class="font-semibold">Évolution</span>
+                    </button>
+                    <button id="btnRegional" class="btn-modern btn-ghost text-sm py-5 flex-col gap-3 hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-map-marked-alt text-3xl text-blue-500"></i>
+                        <span class="font-semibold">Analyse régionale</span>
+                    </button>
+                    <button id="btnComparaison" class="btn-modern btn-ghost text-sm py-5 flex-col gap-3 hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-balance-scale text-3xl text-purple-500"></i>
+                        <span class="font-semibold">Écarts</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State Premium -->
+            <div id="loadingState" class="hidden text-center py-16">
+                <div class="spinner mx-auto mb-6"></div>
+                <p class="text-slate-800 font-bold text-lg mb-2">Analyse en cours...</p>
+                <p class="text-slate-600">Intelligence artificielle en action</p>
+            </div>
+
+            <!-- Results Area -->
+            <div id="resultsArea" class="hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-blue-500"></i>
+                        Résultats d'Analyse
+                    </h3>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- AI Response -->
+                    <div class="result-card">
+                        <h4 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-robot text-purple-500"></i>
+                            Analyse Intelligente
+                        </h4>
+                        <div id="aiResponse" class="text-slate-700 leading-relaxed"></div>
+                    </div>
+                    
+                    <!-- Data Results -->
+                    <div class="result-card">
+                        <h4 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-table text-green-500"></i>
+                            Données Résultantes
+                        </h4>
+                        <div id="dataResults" class="custom-scroll overflow-auto max-h-96"></div>
+                    </div>
+                    
+                    <!-- Code Section -->
+                    <div class="result-card">
+                        <button 
+                            id="toggleCodeBtn" 
+                            class="w-full text-left flex items-center justify-between text-slate-800 font-medium hover:text-blue-500 transition-colors">
+                            <span class="flex items-center gap-2">
+                                <i class="fas fa-code text-blue-500"></i>
+                                Code Python Généré
+                            </span>
+                            <i class="fas fa-chevron-down transition-transform text-slate-500" id="codeChevron"></i>
+                        </button>
+                        <div id="codeSection" class="hidden mt-4">
+                            <pre id="generatedCode" class="code-block custom-scroll text-green-400"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Fonctions globales
+        function setQuery(query) {
+            document.getElementById('queryInput').value = query;
+            console.log('Query set:', query);
+        }
+
+        function toggleCode() {
+            const codeSection = document.getElementById('codeSection');
+            const chevron = document.getElementById('codeChevron');
+            
+            if (codeSection.classList.contains('hidden')) {
+                codeSection.classList.remove('hidden');
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                codeSection.classList.add('hidden');
+                chevron.style.transform = 'rotate(0deg)';
+            }
+            console.log('Code section toggled');
+        }
+
+        async function analyzeQuery() {
+            console.log('📊 analyzeQuery() called');
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Veuillez saisir une question');
+                return;
+            }
+
+            // UI state management
+            const loadingState = document.getElementById('loadingState');
+            const resultsArea = document.getElementById('resultsArea');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            loadingState.classList.remove('hidden');
+            resultsArea.classList.add('hidden');
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Analyse...';
+
+            try {
+                console.log('🚀 Sending request to API...');
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ question: query })
+                });
+
+                console.log('✅ API Response status:', response.status);
+                
+                // Pré-validation du type de contenu
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Réponse non-JSON du serveur (${response.status}): ${text.substring(0, 100)}...`);
+                }
+                
+                // Lecture sécurisée du JSON
+                const result = await response.json();
+                console.log('✅ API Response content:', result);
+
+                if (response.ok) {
+                    displayResults(result);
+                } else {
+                    displayError(result.error || 'Erreur lors de l\'analyse');
+                }
+            } catch (error) {
+                console.error('❌ Network/Parse Error:', error);
+                displayError('Erreur de connexion: ' + error.message);
+            } finally {
+                loadingState.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fas fa-search mr-1"></i>Analyser';
+            }
+        }
+
+        function convertMarkdownToHTML(text) {
+            if (!text) return '';
+            
+            // Convertir les titres ## et ###
+            text = text.replace(/###\s+(.+)/g, '<h4 class="text-lg font-semibold text-slate-800 mt-4 mb-2">$1</h4>');
+            text = text.replace(/##\s+(.+)/g, '<h3 class="text-xl font-bold text-slate-800 mt-4 mb-3">$1</h3>');
+            
+            // Convertir le gras **texte**
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>');
+            
+            // Convertir l'italique *texte*
+            text = text.replace(/\*(.+?)\*/g, '<em class="italic">$1</em>');
+            
+            // Convertir les listes numérotées
+            text = text.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="ml-4 mb-1"><span class="font-medium text-blue-600">$1.</span> $2</div>');
+            
+            // Convertir les listes à puces
+            text = text.replace(/^[-•]\s+(.+)$/gm, '<div class="ml-4 mb-1"><span class="text-blue-500">•</span> $1</div>');
+            
+            // Convertir les sauts de ligne
+            text = text.replace(/\n\n/g, '<br><br>');
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+
+        function displayResults(result) {
+            // Check if response is structured data (JSON) or plain text
+            const aiResponse = document.getElementById('aiResponse');
+            
+            if (result.response && typeof result.response === 'object') {
+                // Structured presentation
+                aiResponse.innerHTML = formatStructuredAnalysis(result.response);
+            } else {
+                // Fallback to plain text with markdown conversion
+                aiResponse.innerHTML = convertMarkdownToHTML(result.response || 'Aucune réponse générée');
+            }
+
+            // Data Results
+            const dataDiv = document.getElementById('dataResults');
+            
+            // ⚡ Gestion robuste : toujours passer par formatTableData si possible
+            // Priorité: response.donnees_detaillees > execution_result
+            let dataToDisplay = null;
+            if (result.response && result.response.donnees_detaillees) {
+                dataToDisplay = result.response.donnees_detaillees;
+            } else if (result.execution_result) {
+                dataToDisplay = result.execution_result;
+            }
+
+            if (dataToDisplay) {
+                // Conversion en array si objet unique
+                const dataArray = Array.isArray(dataToDisplay) ? dataToDisplay : [dataToDisplay];
+                
+                if (dataArray.length > 0) {
+                    dataDiv.innerHTML = formatTableData(dataArray);
+                } else {
+                    dataDiv.innerHTML = '<p class="text-slate-600">Aucune donnée à afficher (tableau vide)</p>';
+                }
+            } else {
+                dataDiv.innerHTML = '<p class="text-slate-600">Aucune donnée à afficher</p>';
+            }
+
+            // Generated Code
+            document.getElementById('generatedCode').textContent = result.code || 'Aucun code généré';
+
+            // Show results
+            document.getElementById('resultsArea').classList.remove('hidden');
+        }
+
+        function formatStructuredAnalysis(analysis) {
+            let html = '';
+            
+            // Titre
+            if (analysis.titre) {
+                html += `<div class="mb-6">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">${analysis.titre}</h3>
+                </div>`;
+            }
+            
+            // 🧠 ANALYSE RÉSUMÉE NARRATIVE (NOUVEAU - juste après le titre)
+            if (analysis.analyse_resume) {
+                html += `<div class="glass rounded-lg p-6 mb-6 border-l-4 border-indigo-500">
+                    <h4 class="text-indigo-600 font-semibold mb-3 flex items-center">
+                        <i class="fas fa-brain mr-2"></i>🧠 Analyse Résumée
+                    </h4>
+                    <div class="text-slate-700 leading-relaxed text-base" style="line-height: 1.8;">${convertMarkdownToHTML(analysis.analyse_resume)}</div>
+                </div>`;
+            }
+            
+            // Contexte (période)
+            if (analysis.contexte && analysis.contexte.mois_nom) {
+                html += `<div class="glass rounded-lg p-4 mb-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-alt text-blue-500 text-xl mr-3"></i>
+                        <div>
+                            <p class="text-blue-600 text-sm">Période Analysée</p>
+                            <p class="text-slate-800 font-semibold text-lg">${analysis.contexte.mois_nom} ${analysis.contexte.annee || ''}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            
+            // KPIs - Cartes visuelles
+            if (analysis.kpis && Object.keys(analysis.kpis).length > 0) {
+                html += '<div class="mb-6"><h4 class="text-slate-800 font-semibold mb-3"><i class="fas fa-chart-line mr-2"></i>Indicateurs Clés</h4>';
+                html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">';
+                
+                const kpis = analysis.kpis;
+                
+                // Montant Déclaré
+                if (kpis.total_declare !== undefined) {
+                    html += createKPICard('Montant Déclaré', formatMoney(kpis.total_declare), 'fas fa-file-invoice-dollar', 'blue');
+                }
+                
+                // Montant Recouvré
+                if (kpis.total_recouvre !== undefined) {
+                    html += createKPICard('Montant Recouvré', formatMoney(kpis.total_recouvre), 'fas fa-money-bill-wave', 'green');
+                }
+                
+                // Attendu Mensuel
+                if (kpis.attendu_mensuel !== undefined && kpis.attendu_mensuel > 0) {
+                    html += createKPICard('Attendu Mensuel', formatMoney(kpis.attendu_mensuel), 'fas fa-calendar-check', 'purple');
+                }
+                
+                // Objectif
+                if (kpis.objectif !== undefined && kpis.objectif > 0) {
+                    html += createKPICard('Objectif', formatMoney(kpis.objectif), 'fas fa-bullseye', 'orange');
+                }
+                
+                // Taux de recouvrement
+                if (kpis.taux_recouvrement !== undefined) {
+                    const taux = kpis.taux_recouvrement;
+                    const color = taux >= 95 ? 'green' : taux >= 80 ? 'yellow' : 'red';
+                    html += createKPICard('Taux Recouvrement', `${taux.toFixed(1)}%`, 'fas fa-percentage', color);
+                }
+                
+                // Taux Atteinte Objectif
+                if (kpis.taux_atteinte_objectif !== undefined) {
+                    const taux = kpis.taux_atteinte_objectif;
+                    const color = taux >= 100 ? 'green' : taux >= 80 ? 'yellow' : 'red';
+                    html += createKPICard('Atteinte Objectif', `${taux.toFixed(1)}%`, 'fas fa-target', color);
+                }
+                
+                // Écart vs Déclaré
+                if (kpis.ecart_global !== undefined) {
+                    const isPerte = kpis.ecart_global < 0;
+                    const montantEcart = Math.abs(kpis.ecart_global);
+                    html += createKPICard(isPerte ? 'Écart Négatif' : 'Écart Positif', formatMoney(montantEcart), 
+                                         isPerte ? 'fas fa-arrow-down' : 'fas fa-arrow-up', 
+                                         isPerte ? 'red' : 'green');
+                }
+                
+                // Écart vs Objectif
+                if (kpis.ecart_objectif !== undefined) {
+                    const enRetard = kpis.ecart_objectif < 0;
+                    const montantEcart = Math.abs(kpis.ecart_objectif);
+                    html += createKPICard(enRetard ? 'Retard sur Objectif' : 'Dépassement Objectif', formatMoney(montantEcart), 
+                                         enRetard ? 'fas fa-exclamation-triangle' : 'fas fa-trophy', 
+                                         enRetard ? 'red' : 'green');
+                }
+                
+                html += '</div></div>';
+            }
+            
+            // Statistiques
+            if (analysis.statistiques && Object.keys(analysis.statistiques).length > 0) {
+                html += '<div class="glass rounded-lg p-5 mb-6">';
+                html += '<h4 class="text-slate-800 font-semibold mb-4"><i class="fas fa-chart-bar mr-2"></i>Statistiques Descriptives</h4>';
+                html += '<div class="grid grid-cols-2 md:grid-cols-3 gap-4">';
+                
+                const stats = analysis.statistiques;
+                
+                if (stats.nombre_total) {
+                    html += createStatItem('Volume Total', stats.nombre_total.toLocaleString('fr-FR') + ' déclarations');
+                }
+                if (stats.nombre_types_taxes) {
+                    html += createStatItem('Diversité', stats.nombre_types_taxes + ' types de taxes');
+                }
+                if (stats.montant_moyen) {
+                    html += createStatItem('Montant Moyen', formatMoney(stats.montant_moyen));
+                }
+                if (stats.montant_median) {
+                    html += createStatItem('Montant Médian', formatMoney(stats.montant_median));
+                }
+                if (stats.montant_max) {
+                    html += createStatItem('Maximum', formatMoney(stats.montant_max));
+                }
+                if (stats.montant_min) {
+                    html += createStatItem('Minimum', formatMoney(stats.montant_min));
+                }
+                
+                html += '</div></div>';
+            }
+            
+            // Alertes
+            if (analysis.alertes && analysis.alertes.length > 0) {
+                html += '<div class="mb-6">';
+                html += '<h4 class="text-slate-800 font-semibold mb-3"><i class="fas fa-bell mr-2"></i>Alertes</h4>';
+                analysis.alertes.forEach(alerte => {
+                    const colorClass = alerte.niveau === 'critique' ? 'red' : alerte.niveau === 'moyen' ? 'yellow' : 'blue';
+                    const icon = alerte.niveau === 'critique' ? 'fas fa-exclamation-circle' : 
+                                alerte.niveau === 'moyen' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
+                    html += `<div class="glass rounded-lg p-4 mb-2 border-l-4 border-${colorClass}-500">
+                        <div class="flex items-center">
+                            <i class="${icon} text-${colorClass}-400 mr-3"></i>
+                            <div>
+                                <span class="text-${colorClass}-400 font-semibold text-xs uppercase">${alerte.niveau}</span>
+                                <p class="text-slate-700">${alerte.message}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+            
+            // Répartition par taxe (Top 5)
+            if (analysis.repartition && analysis.repartition.par_taxe && analysis.repartition.par_taxe.length > 0) {
+                html += '<div class="glass rounded-lg p-5 mb-6">';
+                html += '<h4 class="text-slate-800 font-semibold mb-4"><i class="fas fa-trophy mr-2"></i>Top 5 Taxes par Montant</h4>';
+                
+                analysis.repartition.par_taxe.slice(0, 5).forEach((taxe, index) => {
+                    const percent = analysis.kpis && analysis.kpis.total_declare ? 
+                                  (taxe.montant_declare / analysis.kpis.total_declare * 100) : 0;
+                    html += `<div class="mb-4">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-slate-800 font-medium">${index + 1}. ${taxe.LIBELLE}</span>
+                            <span class="text-blue-600 font-semibold">${formatMoney(taxe.montant_declare)}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="flex-1 bg-gray-700 rounded-full h-2 mr-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" style="width: ${Math.min(percent, 100)}%"></div>
+                            </div>
+                            <span class="text-blue-600 text-sm">${percent.toFixed(1)}%</span>
+                        </div>
+                        <p class="text-slate-600 text-xs mt-1">${taxe.nombre.toLocaleString('fr-FR')} opérations</p>
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Répartition par bureau (Top 5)
+            if (analysis.repartition && analysis.repartition.par_bureau && analysis.repartition.par_bureau.length > 0) {
+                html += '<div class="glass rounded-lg p-5 mb-6">';
+                html += '<h4 class="text-slate-800 font-semibold mb-4"><i class="fas fa-building mr-2"></i>Top 5 Bureaux</h4>';
+                
+                analysis.repartition.par_bureau.slice(0, 5).forEach((bureau, index) => {
+                    html += `<div class="flex justify-between items-center mb-3 p-3 bg-white bg-opacity-5 rounded">
+                        <div>
+                            <span class="text-slate-800 font-medium">${index + 1}. ${bureau.BUREAU}</span>
+                            <p class="text-slate-600 text-sm">${bureau.nombre.toLocaleString('fr-FR')} opérations</p>
+                        </div>
+                        <span class="text-blue-600 font-semibold">${formatMoney(bureau.montant_declare)}</span>
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Analyse Financière Experte
+            if (analysis.analyse_financiere && Object.keys(analysis.analyse_financiere).length > 0) {
+                const af = analysis.analyse_financiere;
+                html += '<div class="glass rounded-lg p-6 mb-6 border-2 border-purple-500 border-opacity-30">';
+                html += '<h4 class="text-slate-800 font-bold text-xl mb-5"><i class="fas fa-briefcase mr-2 text-purple-500"></i>💼 Analyse Financière Experte</h4>';
+                
+                // Synthèse globale
+                if (af.synthese) {
+                    html += `<div class="mb-5 p-4 bg-purple-900 bg-opacity-20 rounded-lg">
+                        <h5 class="text-purple-600 font-semibold mb-2"><i class="fas fa-chart-pie mr-2"></i>Synthèse Globale</h5>
+                        <p class="text-slate-700 leading-relaxed">${af.synthese}</p>
+                    </div>`;
+                }
+                
+                // Tendances détectées
+                if (af.tendances && af.tendances.length > 0) {
+                    html += '<div class="mb-5">';
+                    html += '<h5 class="text-green-300 font-semibold mb-3"><i class="fas fa-chart-line mr-2"></i>📈 Tendances Détectées</h5>';
+                    html += '<ul class="space-y-2">';
+                    af.tendances.forEach(tendance => {
+                        html += `<li class="flex items-start">
+                            <i class="fas fa-arrow-trend-up text-green-400 mr-2 mt-1"></i>
+                            <span class="text-slate-700">${tendance}</span>
+                        </li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // Points de vigilance
+                if (af.points_vigilance && af.points_vigilance.length > 0) {
+                    html += '<div class="mb-5">';
+                    html += '<h5 class="text-orange-300 font-semibold mb-3"><i class="fas fa-exclamation-triangle mr-2"></i>⚠️ Points de Vigilance</h5>';
+                    html += '<ul class="space-y-2">';
+                    af.points_vigilance.forEach(point => {
+                        html += `<li class="flex items-start p-3 bg-orange-900 bg-opacity-20 rounded">
+                            <i class="fas fa-circle text-red-500 text-xs mr-2 mt-1.5"></i>
+                            <span class="text-orange-100">${point}</span>
+                        </li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // Opportunités
+                if (af.opportunites && af.opportunites.length > 0) {
+                    html += '<div class="mb-5">';
+                    html += '<h5 class="text-blue-600 font-semibold mb-3"><i class="fas fa-lightbulb mr-2"></i>💡 Opportunités Identifiées</h5>';
+                    html += '<ul class="space-y-2">';
+                    af.opportunites.forEach(opp => {
+                        html += `<li class="flex items-start p-3 bg-blue-900 bg-opacity-20 rounded">
+                            <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                            <span class="text-slate-700">${opp}</span>
+                        </li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // Risques
+                if (af.risques && af.risques.length > 0) {
+                    html += '<div class="mb-5">';
+                    html += '<h5 class="text-red-300 font-semibold mb-3"><i class="fas fa-shield-alt mr-2"></i>🚨 Risques Identifiés</h5>';
+                    html += '<ul class="space-y-2">';
+                    af.risques.forEach(risque => {
+                        html += `<li class="flex items-start p-3 bg-red-900 bg-opacity-20 rounded border-l-2 border-red-500">
+                            <i class="fas fa-exclamation-circle text-red-400 mr-2 mt-1"></i>
+                            <span class="text-red-100">${risque}</span>
+                        </li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // Recommandations stratégiques
+                if (af.recommandations_strategiques && af.recommandations_strategiques.length > 0) {
+                    html += '<div class="mb-3">';
+                    html += '<h5 class="text-yellow-300 font-semibold mb-3"><i class="fas fa-bullseye mr-2"></i>🎯 Recommandations Stratégiques</h5>';
+                    html += '<div class="overflow-x-auto">';
+                    html += '<table class="w-full text-left">';
+                    html += '<thead><tr class="border-b border-gray-600">';
+                    html += '<th class="py-2 px-3 text-blue-700 font-semibold">Priorité</th>';
+                    html += '<th class="py-2 px-3 text-blue-700 font-semibold">Action</th>';
+                    html += '<th class="py-2 px-3 text-blue-700 font-semibold">Impact Attendu</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    af.recommandations_strategiques.forEach(reco => {
+                        const priorityIcon = reco.priorite === 'critique' ? '🔥' : reco.priorite === 'haute' ? '⚡' : '📌';
+                        const priorityColor = reco.priorite === 'critique' ? 'text-red-400' : 
+                                            reco.priorite === 'haute' ? 'text-orange-400' : 'text-blue-400';
+                        html += `<tr class="border-b border-gray-700 hover:bg-white hover:bg-opacity-5">
+                            <td class="py-3 px-3 ${priorityColor} font-semibold">${priorityIcon} ${reco.priorite.toUpperCase()}</td>
+                            <td class="py-3 px-3 text-slate-800">${reco.action}</td>
+                            <td class="py-3 px-3 text-slate-600">${reco.impact}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table></div></div>';
+                }
+                
+                html += '</div>';
+            }
+            
+            // Recommandations Opérationnelles
+            if (analysis.recommandations && analysis.recommandations.length > 0) {
+                html += '<div class="glass rounded-lg p-5 mb-6">';
+                html += '<h4 class="text-slate-800 font-semibold mb-4"><i class="fas fa-lightbulb mr-2"></i>Recommandations Opérationnelles</h4>';
+                
+                analysis.recommandations.forEach((reco, index) => {
+                    const priorityColor = reco.priorite === 'haute' ? 'red' : reco.priorite === 'moyenne' ? 'yellow' : 'blue';
+                    const priorityIcon = reco.priorite === 'haute' ? 'fas fa-fire' : 
+                                        reco.priorite === 'moyenne' ? 'fas fa-bolt' : 'fas fa-thumbtack';
+                    html += `<div class="mb-4 p-4 bg-white bg-opacity-5 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="${priorityIcon} text-${priorityColor}-400 text-xl mr-3 mt-1"></i>
+                            <div class="flex-1">
+                                <p class="text-slate-800 font-semibold mb-1">${index + 1}. ${reco.action}</p>
+                                <p class="text-slate-600 text-sm italic">${reco.justification}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                
+                html += '</div>';
+            }
+            
+            // 📊 ANALYSES COMPLÉMENTAIRES MULTI-DIMENSIONNELLES (NOUVEAU)
+            if (analysis.analyses_complementaires && Object.keys(analysis.analyses_complementaires).length > 0) {
+                const ac = analysis.analyses_complementaires;
+                // Helper: extraire le montant peu importe le nom de clé utilisé par le LLM
+                const getMontant = (item) => item.TOTAL || item.TOTAL_RECOUVRE || item.TOTAL_DECLARE || item.MONTANT_RECOUVRE || item.MONTANT || 0;
+                html += '<div class="glass rounded-lg p-6 mb-6 border-2 border-blue-500 border-opacity-30">';
+                html += '<h4 class="text-slate-800 font-bold text-xl mb-5"><i class="fas fa-cubes mr-2 text-blue-500"></i>📊 Analyses Complémentaires Multi-Dimensionnelles</h4>';
+                
+                // Grille des analyses
+                html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
+                
+                // 1. Répartition par NATURE
+                if (ac.repartition_nature && ac.repartition_nature.length > 0) {
+                    html += '<div class="bg-white bg-opacity-5 rounded-lg p-4">';
+                    html += '<h5 class="text-purple-600 font-semibold mb-3"><i class="fas fa-tags mr-2"></i>🏷️ Répartition par Nature</h5>';
+                    html += '<div class="space-y-2">';
+                    ac.repartition_nature.slice(0, 5).forEach((item, index) => {
+                        const pct = item.POURCENTAGE || item.POURCENTAGE_RECOUVRE || item.POURCENTAGE_DECLARE || 0;
+                        html += `<div class="flex justify-between items-center p-2 bg-white bg-opacity-5 rounded">
+                            <span class="text-slate-800 text-sm">${index + 1}. ${item.NATURE || 'N/A'}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-blue-600 text-sm font-semibold">${formatMoney(getMontant(item))}</span>
+                                <span class="text-purple-400 text-xs">(${pct.toFixed(1)}%)</span>
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div></div>';
+                }
+                
+                // 2. Top LIBELLÉS
+                if (ac.top_libelles && ac.top_libelles.length > 0) {
+                    html += '<div class="bg-white bg-opacity-5 rounded-lg p-4">';
+                    html += '<h5 class="text-green-300 font-semibold mb-3"><i class="fas fa-list-ol mr-2"></i>📋 Top Libellés</h5>';
+                    html += '<div class="space-y-2">';
+                    ac.top_libelles.slice(0, 5).forEach((item, index) => {
+                        html += `<div class="flex justify-between items-center p-2 bg-white bg-opacity-5 rounded">
+                            <span class="text-slate-800 text-sm truncate max-w-xs">${index + 1}. ${item.LIBELLE || 'N/A'}</span>
+                            <span class="text-green-300 text-sm font-semibold">${formatMoney(getMontant(item))}</span>
+                        </div>`;
+                    });
+                    html += '</div></div>';
+                }
+                
+                // 3. Répartition par PAYS
+                if (ac.repartition_pays && ac.repartition_pays.length > 0) {
+                    html += '<div class="bg-white bg-opacity-5 rounded-lg p-4">';
+                    html += '<h5 class="text-orange-300 font-semibold mb-3"><i class="fas fa-globe-africa mr-2"></i>🌍 Répartition par Pays</h5>';
+                    html += '<div class="space-y-2">';
+                    ac.repartition_pays.slice(0, 5).forEach((item, index) => {
+                        html += `<div class="flex justify-between items-center p-2 bg-white bg-opacity-5 rounded">
+                            <span class="text-slate-800 text-sm">${index + 1}. ${item.PAYS || 'N/A'}</span>
+                            <span class="text-orange-300 text-sm font-semibold">${formatMoney(getMontant(item))}</span>
+                        </div>`;
+                    });
+                    html += '</div></div>';
+                }
+                
+                // 4. Répartition par CATÉGORIE
+                if (ac.repartition_categorie && ac.repartition_categorie.length > 0) {
+                    html += '<div class="bg-white bg-opacity-5 rounded-lg p-4">';
+                    html += '<h5 class="text-cyan-300 font-semibold mb-3"><i class="fas fa-folder-open mr-2"></i>📂 Répartition par Catégorie</h5>';
+                    html += '<div class="space-y-2">';
+                    ac.repartition_categorie.slice(0, 5).forEach((item, index) => {
+                        const pct = item.POURCENTAGE || item.POURCENTAGE_RECOUVRE || item.POURCENTAGE_DECLARE || 0;
+                        html += `<div class="flex justify-between items-center p-2 bg-white bg-opacity-5 rounded">
+                            <span class="text-white text-sm truncate max-w-xs">${index + 1}. ${item.CATEGORIE || 'N/A'}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-cyan-300 text-sm font-semibold">${formatMoney(getMontant(item))}</span>
+                                <span class="text-cyan-400 text-xs">(${pct.toFixed(1)}%)</span>
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div></div>';
+                }
+                
+                html += '</div></div>';  // Ferme grid et container
+            }
+            
+            return html;
+        }
+        
+        function createKPICard(title, value, icon, color) {
+            const colors = {
+                'blue': 'bg-blue-500',
+                'green': 'bg-green-500',
+                'red': 'bg-red-500',
+                'yellow': 'bg-yellow-500',
+                'purple': 'bg-purple-500',
+                'orange': 'bg-orange-500'
+            };
+            
+            const iconColors = {
+                'blue': 'text-blue-600',
+                'green': 'text-green-600',
+                'red': 'text-red-600',
+                'yellow': 'text-yellow-600',
+                'purple': 'text-purple-600',
+                'orange': 'text-orange-600'
+            };
+            
+            return `<div class="glass rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full ${colors[color]} bg-opacity-20">
+                        <i class="${icon} ${iconColors[color]} text-2xl"></i>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-slate-600 text-xs font-medium">${title}</p>
+                        <p class="text-slate-800 font-bold text-lg">${value}</p>
+                    </div>
+                </div>
+            </div>`;
+        }
+        
+        function createStatItem(label, value) {
+            return `<div class="text-center">
+                <p class="text-blue-600 text-sm mb-1">${label}</p>
+                <p class="text-slate-800 font-semibold">${value}</p>
+            </div>`;
+        }
+        
+        function formatMoney(amount) {
+            if (amount === undefined || amount === null) return '0';
+            return Math.round(amount).toLocaleString('fr-FR') + ' FCFA';
+        }
+
+        function displayError(error) {
+            document.getElementById('aiResponse').innerHTML = `<div class="text-red-300 bg-red-900 bg-opacity-30 p-3 rounded"><i class="fas fa-exclamation-triangle mr-2"></i>${error}</div>`;
+            document.getElementById('dataResults').innerHTML = '<p class="text-slate-600">Aucune donnée disponible suite à l\'erreur</p>';
+            document.getElementById('generatedCode').textContent = '';
+            document.getElementById('resultsArea').classList.remove('hidden');
+        }
+
+        function formatTableData(data) {
+            if (!data || data.length === 0) return '<p class="text-gray-400">Aucune donnée à afficher</p>';
+
+            const keys = Object.keys(data[0]);
+            let html = '<div class="overflow-x-auto custom-scroll"><table class="modern-table">';
+            
+            // Header
+            html += '<thead><tr>';
+            keys.forEach(key => {
+                html += `<th>${key.replace(/_/g, ' ')}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // Body
+            html += '<tbody>';
+            data.slice(0, 50).forEach((row, index) => {
+                html += `<tr>`;
+                keys.forEach(key => {
+                    const value = row[key];
+                    let displayValue = '';
+                    if (typeof value === 'number') {
+                        displayValue = Number.isInteger(value) ? value.toLocaleString('fr-FR') : 
+                                      value.toFixed(2).toLocaleString('fr-FR');
+                    } else {
+                        displayValue = value || '';
+                    }
+                    html += `<td>${displayValue}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            
+            if (data.length > 50) {
+                html += `<p class="text-xs text-gray-400 mt-3 text-center">Affichage des 50 premiers résultats sur ${data.length} total</p>`;
+            }
+            
+            return html;
+        }
+
+        // Configuration des événements
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM loaded - Setting up event listeners');
+            
+            // Bouton principal d'analyse
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (analyzeBtn) {
+                analyzeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('🔍 Analyze button clicked');
+                    analyzeQuery();
+                });
+                console.log('✅ Analyze button event added');
+            } else {
+                console.error('❌ Analyze button NOT FOUND');
+            }
+
+            // Boutons rapides avec date du jour
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1; // 0-11, donc +1
+            const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 
+                               'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+            const currentMonthName = monthNames[today.getMonth()];
+            const currentDate = today.toLocaleDateString('fr-FR');
+            
+            const btnTop = document.getElementById('btnTop');
+            if (btnTop) {
+                btnTop.addEventListener('click', function() {
+                    console.log('📊 Top contributors button clicked');
+                    setQuery(`Top 10 des contribuables par montant recouvré au ${currentDate}`);
+                });
+            }
+
+            const btnEvolution = document.getElementById('btnEvolution');
+            if (btnEvolution) {
+                btnEvolution.addEventListener('click', function() {
+                    console.log('📈 Evolution button clicked');
+                    setQuery(`Évolution mensuelle des recouvrements en ${currentYear}`);
+                });
+            }
+
+            const btnRegional = document.getElementById('btnRegional');
+            if (btnRegional) {
+                btnRegional.addEventListener('click', function() {
+                    console.log('🌍 Regional button clicked');
+                    setQuery(`Performance par direction régionale en ${currentMonthName} ${currentYear}`);
+                });
+            }
+
+            const btnComparaison = document.getElementById('btnComparaison');
+            if (btnComparaison) {
+                btnComparaison.addEventListener('click', function() {
+                    console.log('⚖️ Comparison button clicked');
+                    setQuery(`Comparaison montant déclaré vs recouvré pour ${currentMonthName} ${currentYear}`);
+                });
+            }
+
+            // Bouton toggle code
+            const toggleCodeBtn = document.getElementById('toggleCodeBtn');
+            if (toggleCodeBtn) {
+                toggleCodeBtn.addEventListener('click', function() {
+                    console.log('🔧 Toggle code button clicked');
+                    toggleCode();
+                });
+            }
+
+            // Enter key support
+            const queryInput = document.getElementById('queryInput');
+            if (queryInput) {
+                queryInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        console.log('⌨️ Enter key pressed');
+                        analyzeQuery();
+                    }
+                });
+                // Focus automatique
+                setTimeout(() => queryInput.focus(), 500);
+            }
+
+            console.log('✅ All event listeners configured');
+        });
+
+        // Test global des clics pour debug
+        document.addEventListener('click', function(e) {
+            console.log('🖱️ Click detected on:', e.target.tagName, e.target.id || e.target.className);
+        });
+    </script>
+
+    <!-- LexFin Chatbot Widget -->
+    <style>
+        .lexfin-chat-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5);
+            z-index: 1000;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .lexfin-chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(16, 185, 129, 0.6);
+        }
+
+        .lexfin-chat-button i {
+            font-size: 32px;
+            color: white;
+        }
+
+        .lexfin-chat-button.active i.fa-comments {
+            display: none;
+        }
+
+        .lexfin-chat-button.active i.fa-times {
+            display: block;
+        }
+
+        .lexfin-chat-button i.fa-times {
+            display: none;
+        }
+
+        .lexfin-chat-widget {
+            position: fixed;
+            bottom: 120px;
+            right: 30px;
+            width: 420px;
+            max-width: calc(100vw - 60px);
+            height: 650px;
+            max-height: calc(100vh - 180px);
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideInChat 0.3s ease-out;
+        }
+
+        .lexfin-chat-widget.active {
+            display: flex;
+        }
+
+        @keyframes slideInChat {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .lexfin-chat-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lexfin-chat-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .lexfin-chat-header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin: 4px 0 0 0;
+        }
+
+        .lexfin-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        .lexfin-message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .lexfin-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .lexfin-message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .lexfin-message.user .lexfin-message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .lexfin-message.bot .lexfin-message-avatar {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .lexfin-message-content {
+            max-width: 75%;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .lexfin-message.user .lexfin-message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .lexfin-chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .lexfin-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .lexfin-chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .lexfin-chat-input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .lexfin-send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .lexfin-send-btn:hover:not(:disabled) {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        .lexfin-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .lexfin-welcome {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+
+        .lexfin-welcome i {
+            font-size: 60px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+
+        .lexfin-typing {
+            display: flex;
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .lexfin-typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+            animation: typingAnim 1.4s infinite;
+        }
+
+        .lexfin-typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .lexfin-typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnim {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-8px); }
+        }
+    </style>
+
+    <!-- Floating Chat Button -->
+    <button class="lexfin-chat-button" id="lexfinChatButton" onclick="toggleLexfinChat()">
+        <i class="fas fa-comments"></i>
+        <i class="fas fa-times"></i>
+    </button>
+
+    <!-- Chat Widget -->
+    <div class="lexfin-chat-widget" id="lexfinChatWidget">
+        <div class="lexfin-chat-header">
+            <div>
+                <h3><i class="fas fa-balance-scale"></i> LexFin Assistant</h3>
+                <p>Expert fiscal et douanier</p>
+            </div>
+        </div>
+
+        <div class="lexfin-chat-messages" id="lexfinChatMessages">
+            <div class="lexfin-welcome">
+                <i class="fas fa-gavel"></i>
+                <h4 style="font-size: 18px; margin: 10px 0; color: #1e293b;">Bienvenue sur LexFin 👋</h4>
+                <p style="font-size: 13px;">Expert en droit fiscal et douanier sénégalais</p>
+                
+                <!-- Suggestions de questions -->
+                <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                    <p style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Questions suggérées:</p>
+                    <button onclick="askLexfinQuestion('Quel est le taux de la TVA ?')" 
+                            style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-size: 13px; cursor: pointer; text-align: left; transition: all 0.3s; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);">
+                        <i class="fas fa-percentage" style="margin-right: 8px;"></i>
+                        Quel est le taux de la TVA ?
+                    </button>
+                    <button onclick="askLexfinQuestion('Quelles sont les nouveautés de la loi de finances 2026 ?')" 
+                            style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-size: 13px; cursor: pointer; text-align: left; transition: all 0.3s; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);">
+                        <i class="fas fa-file-invoice" style="margin-right: 8px;"></i>
+                        Nouveautés loi de finances 2026
+                    </button>
+                    <button onclick="askLexfinQuestion('Quels sont les droits de douane applicables ?')" 
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-size: 13px; cursor: pointer; text-align: left; transition: all 0.3s; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);">
+                        <i class="fas fa-shipping-fast" style="margin-right: 8px;"></i>
+                        Droits de douane applicables
+                    </button>
+                    <button onclick="askLexfinQuestion('Comment calculer l\'impôt sur les sociétés ?')" 
+                            style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; border: none; padding: 10px 16px; border-radius: 12px; font-size: 13px; cursor: pointer; text-align: left; transition: all 0.3s; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);">
+                        <i class="fas fa-calculator" style="margin-right: 8px;"></i>
+                        Calcul impôt sur les sociétés
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lexfin-chat-input-container">
+            <div class="lexfin-input-wrapper">
+                <input 
+                    type="text" 
+                    class="lexfin-chat-input" 
+                    id="lexfinChatInput" 
+                    placeholder="Posez votre question..."
+                    autocomplete="off"
+                >
+                <button class="lexfin-send-btn" id="lexfinSendBtn" onclick="sendLexfinMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lexfinChatOpen = false;
+        let lexfinProcessing = false;
+
+        function toggleLexfinChat() {
+            lexfinChatOpen = !lexfinChatOpen;
+            const widget = document.getElementById('lexfinChatWidget');
+            const button = document.getElementById('lexfinChatButton');
+            
+            if (lexfinChatOpen) {
+                widget.classList.add('active');
+                button.classList.add('active');
+                document.getElementById('lexfinChatInput').focus();
+            } else {
+                widget.classList.remove('active');
+                button.classList.remove('active');
+            }
+        }
+
+        function askLexfinQuestion(question) {
+            const input = document.getElementById('lexfinChatInput');
+            input.value = question;
+            sendLexfinMessage();
+        }
+
+        async function sendLexfinMessage() {
+            const input = document.getElementById('lexfinChatInput');
+            const message = input.value.trim();
+
+            if (!message || lexfinProcessing) return;
+
+            lexfinProcessing = true;
+            document.getElementById('lexfinSendBtn').disabled = true;
+
+            // Add user message
+            addLexfinMessage(message, 'user');
+            input.value = '';
+
+            // Show typing indicator
+            showLexfinTyping();
+
+            try {
+                const response = await fetch('/api/lexfin/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: message})
+                });
+
+                const data = await response.json();
+                
+                hideLexfinTyping();
+
+                if (data.status === 'success') {
+                    addLexfinMessage(data.response, 'bot');
+                } else {
+                    addLexfinMessage(`❌ ${data.error}`, 'bot');
+                }
+
+            } catch (error) {
+                hideLexfinTyping();
+                addLexfinMessage(`❌ Erreur: ${error.message}`, 'bot');
+            }
+
+            lexfinProcessing = false;
+            document.getElementById('lexfinSendBtn').disabled = false;
+            input.focus();
+        }
+
+        function addLexfinMessage(text, sender) {
+            const messagesContainer = document.getElementById('lexfinChatMessages');
+            const welcomeScreen = messagesContainer.querySelector('.lexfin-welcome');
+            if (welcomeScreen) welcomeScreen.remove();
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `lexfin-message ${sender}`;
+            
+            messageDiv.innerHTML = `
+                <div class="lexfin-message-avatar">
+                    <i class="fas fa-${sender === 'user' ? 'user' : 'robot'}"></i>
+                </div>
+                <div class="lexfin-message-content">
+                    ${formatLexfinMessage(text)}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function formatLexfinMessage(text) {
+            // Traiter les hashtags du plus spécifique au moins spécifique
+            text = text.replace(/^###\s+(.*)$/gm, '<div style="font-size: 1.05em; font-weight: 600; margin: 12px 0 6px 0; color: #059669; border-left: 3px solid #10b981; padding-left: 10px;">$1</div>');
+            text = text.replace(/^##\s+(.*)$/gm, '<div style="font-size: 1.15em; font-weight: 600; margin: 14px 0 7px 0; color: #047857; border-left: 4px solid #10b981; padding-left: 12px;">$1</div>');
+            text = text.replace(/^#\s+(.*)$/gm, '<div style="font-size: 1.25em; font-weight: 700; margin: 16px 0 8px 0; color: #065f46; border-left: 5px solid #10b981; padding-left: 14px;">$1</div>');
+            
+            // Formatage du texte
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1e293b;">$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Listes à puces
+            text = text.replace(/^[\-\•]\s+(.*)$/gm, '<div style="margin-left: 20px; margin-bottom: 6px; padding-left: 8px; border-left: 2px solid #d1fae5;">• $1</div>');
+            
+            // Retours à la ligne
+            text = text.replace(/\n/g, '<br>');
+            
+            return text;
+        }
+
+        function showLexfinTyping() {
+            const messagesContainer = document.getElementById('lexfinChatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'lexfin-message bot';
+            typingDiv.id = 'lexfinTyping';
+            typingDiv.innerHTML = `
+                <div class="lexfin-message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="lexfin-message-content">
+                    <div class="lexfin-typing">
+                        <div class="lexfin-typing-dot"></div>
+                        <div class="lexfin-typing-dot"></div>
+                        <div class="lexfin-typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideLexfinTyping() {
+            const indicator = document.getElementById('lexfinTyping');
+            if (indicator) indicator.remove();
+        }
+
+        // Enter key support
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('lexfinChatInput');
+            if (input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendLexfinMessage();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
