@@ -1,4 +1,4 @@
-﻿"""
+"""
 SRMT Business Intelligence Platform - Simplified Production Version
 Version prête pour déploiement immédiat avec toutes les optimisations de production
 """
@@ -683,64 +683,10 @@ Phrase:"""
     
     # ⚠️ CACHE DÉSACTIVÉ : Les données fiscales changent constamment, chaque requête doit être fraîche
     # @lru_cache(maxsize=200)  # Cache Python désactivé
-    def _is_conversational(self, query: str) -> str | None:
-        """Détecte les messages conversationnels simples et retourne une réponse directe sans appel IA."""
-        import re
-        q = query.strip().lower()
-        q_clean = re.sub(r'[^\w\s]', '', q).strip()
-
-        greetings = {
-            r'^(salut|hello|hi|hey|bonjour|bonsoir|bjr|slt|coucou|yo|allo|allô)$':
-                "Bonjour ! 👋 Je suis **LexFIN**, votre assistant Business Intelligence. Comment puis-je vous aider aujourd'hui ? Posez-moi une question sur vos données fiscales.",
-            r'^(comment (ça va|ca va|tu vas|allez[- ]vous)|ça va\??|ca va\??)$':
-                "Je vais très bien, merci ! 😊 Prêt à analyser vos données. Quelle est votre question ?",
-            r'^(merci|merci beaucoup|thanks|thank you|thx|ok merci)$':
-                "De rien ! 😊 N'hésitez pas si vous avez d'autres questions.",
-            r'^(au revoir|bye|goodbye|à bientôt|a bientot|bonne journée|bonne soirée)$':
-                "Au revoir ! 👋 Bonne journée.",
-            r'^(ok|okay|d\'?accord|parfait|super|très bien|tres bien|nickel|cool|ок)$':
-                "Parfait ! 😊 Je suis là si vous avez besoin d'analyser des données.",
-            r'^(qui es[- ]tu|tu es qui|c\'?est quoi|qu\'?est[- ]ce que tu es|présente[- ]toi|presente[- ]toi|what are you)$':
-                "Je suis **LexFIN** 🤖, l'assistant BI du **SRMT** (Système de Recoupement et de Management des Taxes). Je vous aide à analyser vos données fiscales : recettes, contribuables, écarts, tendances, etc.",
-            r'^(aide|help|comment (tu marches|ça marche|ca marche)|que (peux[- ]tu|sais[- ]tu) faire)$':
-                "Je peux vous aider avec :\n- 📊 Analyse des recettes fiscales\n- 👤 Top contribuables\n- 📈 Tendances et comparaisons\n- ⚠️ Écarts et anomalies\n- 🔍 Recherches détaillées sur les données SRMT\n\nPosez simplement votre question en français !",
-        }
-
-        for pattern, response in greetings.items():
-            if re.match(pattern, q_clean):
-                return response
-
-        # Messages trop courts sans mots-clés analytiques
-        analytical_keywords = [
-            'recette', 'contribuable', 'taxe', 'impôt', 'impot', 'montant', 'total',
-            'liste', 'top', 'écart', 'ecar', 'recouvrement', 'déclar', 'declar',
-            'date', 'année', 'annee', 'mois', 'trimestre', 'commune', 'région', 'region',
-            'nis', 'nif', 'article', 'code', 'categor', 'statut', 'comparai', 'évolution',
-            'evolution', 'moyenne', 'somme', 'compte', 'nombre', 'max', 'min', 'rapport'
-        ]
-        if len(q_clean) < 15 and not any(kw in q_clean for kw in analytical_keywords):
-            return f"Je suis LexFIN, votre assistant BI. 😊 Je suis spécialisé dans l'analyse des données fiscales du SRMT. Posez-moi une question sur vos données !"
-
-        return None  # Pas conversationnel → pipeline normal
-
     def analyze_query(self, query: str) -> Dict[str, Any]:
         """ ANALYSE INTELLIGENTE - DONNÉES TOUJOURS FRAÎCHES"""
         start_time = time.time()
-
-        # 💬 DÉTECTION MESSAGES CONVERSATIONNELS (avant tout appel IA)
-        conv_response = self._is_conversational(query)
-        if conv_response:
-            logger.info(f"💬 Message conversationnel détecté → réponse instantanée")
-            return {
-                'response': conv_response,
-                'code': '',
-                'execution_result': None,
-                'processing_time': round(time.time() - start_time, 3),
-                'cached': False,
-                'conversational': True,
-                'auto_corrections_applied': False,
-            }
-
+        
         # ⚠️ CACHE DÉSACTIVÉ : Pour garantir des données toujours à jour
         # Les données fiscales évoluent constamment, le cache peut retourner des informations obsolètes
         # cached_result = self._check_cache(query)
@@ -2346,15 +2292,6 @@ Si aucune alerte: réponds []"""
             logger.info(f"✅ API répondu en {api_time:.1f}s")
             return response.choices[0].message.content.strip()
         except Exception as e:
-            err_str = str(e)
-            # Modèle absent du compte NIM (function UUID not found)
-            if 'Not found for account' in err_str or 'not found for account' in err_str:
-                logger.error(f"🚫 Modèle non autorisé sur ce compte: {self.config.MODEL_NAME}")
-                raise Exception(f"Not found for account — modèle '{self.config.MODEL_NAME}' non autorisé")
-            # Rate limit / quota
-            elif '429' in err_str or 'rate limit' in err_str.lower() or 'quota' in err_str.lower():
-                logger.warning(f"⏳ Rate limit NIM pour {self.config.MODEL_NAME}")
-                raise Exception(f"rate limit — quota dépassé pour '{self.config.MODEL_NAME}', réessayez dans quelques secondes")
             logger.error(f"Erreur appel IA (taille prompt: {len(system_prompt) + len(user_prompt)} chars): {e}")
             raise
     
@@ -3207,20 +3144,14 @@ def create_production_app() -> Flask:
             
             # 🤖 Récupérer le modèle sélectionné (optionnel)
             selected_model = data_input.get('model', None)
-            assistant_context = data_input.get('assistant_context', '')
             if selected_model:
                 # Changer temporairement le modèle pour cette requête
                 original_model = ai_engine.config.MODEL_NAME
                 ai_engine.config.MODEL_NAME = selected_model
                 logger.info(f"🤖 Utilisation du modèle: {selected_model}")
             
-            # Prepend assistant context to question if provided
-            enriched_question = question
-            if assistant_context:
-                enriched_question = f"[Contexte assistant: {assistant_context}]\n\n{question}"
-            
             # Analyse
-            result = ai_engine.analyze_query(enriched_question)
+            result = ai_engine.analyze_query(question)
             
             # Restaurer le modèle original si changé
             if selected_model:
@@ -3250,60 +3181,7 @@ def create_production_app() -> Flask:
         except Exception as e:
             logger.error(f"Erreur endpoint analyse: {e}")
             return jsonify({'error': 'Erreur interne', 'message': str(e)}), 500
-
-    @app.route('/api/lexfin', methods=['POST'])
-    def lexfin_legal_endpoint():
-        """LexFin — Expert fiscal et douanier sénégalais — proxy vers l'API externe"""
-        try:
-            data_input = request.get_json()
-            if not data_input or 'question' not in data_input:
-                return jsonify({'error': 'Question manquante'}), 400
-            question = data_input['question'].strip()
-            if not question:
-                return jsonify({'error': 'Question vide'}), 400
-
-            lexfin_url = "https://srmt-documind-srmtbi.apps.data-ai.heritage.africa/chat"
-            logger.info(f"🔗 LexFin → {lexfin_url} | question: {question[:60]}…")
-
-            response = requests.post(
-                lexfin_url,
-                json={'message': question},
-                timeout=60,
-                headers={'Content-Type': 'application/json'}
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-                answer   = result.get('response', result.get('message', result.get('answer', str(result))))
-                refs     = result.get('references', result.get('sources', []))
-                logger.info(f"✅ LexFin: réponse reçue ({len(answer)} chars)")
-                return jsonify({'response': answer, 'references': refs, 'mode': 'lexfin_legal'})
-            else:
-                logger.warning(f"⚠️ LexFin API status {response.status_code}: {response.text[:200]}")
-                return jsonify({
-                    'error': f'API LexFin a retourné {response.status_code}',
-                    'response': f"⚠️ LexFin est temporairement indisponible (code {response.status_code}). Veuillez réessayer."
-                }), 502
-
-        except requests.Timeout:
-            logger.error("⏱️ LexFin API timeout (60s)")
-            return jsonify({
-                'error': 'Timeout',
-                'response': "⏱️ LexFin ne répond pas (délai > 60s). Veuillez réessayer dans quelques instants."
-            }), 504
-        except requests.ConnectionError:
-            logger.error("🚫 LexFin API connexion impossible")
-            return jsonify({
-                'error': 'Connexion impossible',
-                'response': "🚫 Impossible de joindre LexFin. Vérifiez que le service est bien démarré sur OpenShift."
-            }), 503
-        except Exception as e:
-            logger.error(f"Erreur LexFin legal endpoint: {e}")
-            return jsonify({
-                'error': str(e),
-                'response': "LexFin a rencontré une difficulté technique. Veuillez réessayer."
-            }), 500
-
+    
     @app.route('/query', methods=['POST'])
     def query_endpoint():
         """Route de compatibilité pour l'interface - redirige vers analyze"""
@@ -3332,17 +3210,62 @@ def create_production_app() -> Flask:
         return jsonify({
             'current': ai_engine.config.MODEL_NAME,
             'available': [
-                {'id': 'meta/llama-3.1-8b-instruct',              'name': 'Llama 3.1 8B',          'speed': 'fast',   'category': 'fast'},
-                {'id': 'nvidia/llama-3.1-nemotron-nano-8b-v1',    'name': 'Nemotron Nano 8B',      'speed': 'fast',   'category': 'fast'},
-                {'id': 'meta/llama-3.2-3b-instruct',              'name': 'Llama 3.2 3B',          'speed': 'fast',   'category': 'fast'},
-                {'id': 'qwen/qwen2.5-coder-32b-instruct',         'name': 'Qwen Coder 32B',        'speed': 'medium', 'category': 'coding'},
-                {'id': 'mistralai/mixtral-8x7b-instruct-v0.1',    'name': 'Mixtral 8x7B',          'speed': 'medium', 'category': 'general'},
-                {'id': 'google/gemma-3-12b-it',                   'name': 'Gemma 3 12B',           'speed': 'medium', 'category': 'general'},
-                {'id': 'meta/llama-3.3-70b-instruct',             'name': 'Llama 3.3 70B',         'speed': 'medium', 'category': 'general'},
-                {'id': 'nvidia/llama-3.3-nemotron-super-49b-v1',  'name': 'Nemotron Super 49B',    'speed': 'medium', 'category': 'general'},
-                {'id': 'meta/llama-4-maverick-17b-128e-instruct', 'name': 'Llama 4 Maverick',      'speed': 'medium', 'category': 'general'},
-                {'id': 'mistralai/mixtral-8x22b-instruct-v0.1',   'name': 'Mixtral 8x22B',         'speed': 'slow',   'category': 'general'},
-                {'id': 'mistralai/mistral-large-3-675b-instruct-2512', 'name': 'Mistral Large 3', 'speed': 'slow',   'category': 'general'},
+                {
+                    'id': 'meta/llama-3.1-8b-instruct',
+                    'name': 'Llama 3.1 8B',
+                    'description': 'Rapide et efficace',
+                    'speed': 'fast',
+                    'quality': 'good',
+                    'category': 'general'
+                },
+                {
+                    'id': 'mistralai/mistral-7b-instruct-v0.3',
+                    'name': 'Mistral 7B',
+                    'description': 'Rapide et polyvalent',
+                    'speed': 'fast',
+                    'quality': 'good',
+                    'category': 'general'
+                },
+                {
+                    'id': 'qwen/qwen2.5-coder-32b-instruct',
+                    'name': 'Qwen Coder 32B',
+                    'description': 'Spécialisé en codage',
+                    'speed': 'medium',
+                    'quality': 'excellent',
+                    'category': 'coding'
+                },
+                {
+                    'id': 'qwen/qwq-32b-preview',
+                    'name': 'Qwen QwQ 32B',
+                    'description': 'Raisonnement avancé',
+                    'speed': 'medium',
+                    'quality': 'excellent',
+                    'category': 'reasoning'
+                },
+                {
+                    'id': 'meta/llama-3.1-70b-instruct',
+                    'name': 'Llama 3.1 70B',
+                    'description': 'Précis et équilibré',
+                    'speed': 'medium',
+                    'quality': 'excellent',
+                    'category': 'general'
+                },
+                {
+                    'id': 'nvidia/nemotron-4-340b-instruct',
+                    'name': 'Nemotron 340B',
+                    'description': 'Très puissant',
+                    'speed': 'slow',
+                    'quality': 'excellent',
+                    'category': 'general'
+                },
+                {
+                    'id': 'meta/llama-3.1-405b-instruct',
+                    'name': 'Llama 3.1 405B',
+                    'description': 'Ultra performant',
+                    'speed': 'very_slow',
+                    'quality': 'outstanding',
+                    'category': 'general'
+                }
             ]
         })
     
@@ -3531,97 +3454,6 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
         }
-        
-        /* ✅ FIX THÈME SOMBRE : Forcer couleur blanche sur tout le contenu généré */
-        #aiResponse, #aiResponse * {
-            color: inherit;
-        }
-        #aiResponse {
-            color: #bfdbfe; /* text-blue-200 */
-        }
-        #aiResponse h1, #aiResponse h2, #aiResponse h3,
-        #aiResponse h4, #aiResponse h5, #aiResponse h6 {
-            color: #ffffff;
-            font-weight: 700;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        #aiResponse p {
-            color: #bfdbfe;
-            margin-bottom: 0.75rem;
-            line-height: 1.7;
-        }
-        #aiResponse strong, #aiResponse b {
-            color: #ffffff;
-            font-weight: 700;
-        }
-        #aiResponse em, #aiResponse i {
-            color: #93c5fd;
-        }
-        #aiResponse ul, #aiResponse ol {
-            color: #bfdbfe;
-            padding-left: 1.5rem;
-            margin-bottom: 0.75rem;
-        }
-        #aiResponse li {
-            color: #bfdbfe;
-            margin-bottom: 0.25rem;
-        }
-        #aiResponse a {
-            color: #60a5fa;
-            text-decoration: underline;
-        }
-        #aiResponse code {
-            color: #86efac;
-            background: rgba(0,0,0,0.3);
-            padding: 0.1rem 0.3rem;
-            border-radius: 4px;
-            font-size: 0.9em;
-        }
-        #aiResponse pre {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 1rem;
-            overflow-x: auto;
-            margin-bottom: 0.75rem;
-        }
-        #aiResponse pre code {
-            color: #86efac;
-            background: transparent;
-            padding: 0;
-        }
-        #aiResponse blockquote {
-            border-left: 4px solid #3b82f6;
-            padding-left: 1rem;
-            color: #93c5fd;
-            margin-bottom: 0.75rem;
-        }
-        #aiResponse table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0.75rem;
-        }
-        #aiResponse th {
-            color: #ffffff;
-            background: rgba(59, 130, 246, 0.2);
-            padding: 0.5rem 1rem;
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-        #aiResponse td {
-            color: #bfdbfe;
-            padding: 0.5rem 1rem;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        #aiResponse hr {
-            border-color: rgba(255,255,255,0.15);
-            margin: 1rem 0;
-        }
-        
-        /* Fix couleur texte dans les zones de données */
-        #dataResults, #dataResults * {
-            color: inherit;
-        }
     </style>
 </head>
 <body class="gradient-bg">
@@ -3756,13 +3588,13 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
                         <i class="fas fa-trophy mr-2 text-yellow-400"></i>Top contribuables
                     </button>
                     <button id="btnEvolution" class="bg-white bg-opacity-10 hover:bg-opacity-20 text-white px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-center">
-                        <i class="fas fa-chart-line mr-2 text-green-400"></i>Évolution temporelle
+                        <i class="fas fa-chart-line mr-2 text-green-400"></i>volution temporelle
                     </button>
                     <button id="btnRegional" class="bg-white bg-opacity-10 hover:bg-opacity-20 text-white px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-center">
                         <i class="fas fa-map-marked-alt mr-2 text-blue-400"></i>Analyse régionale
                     </button>
                     <button id="btnComparaison" class="bg-white bg-opacity-10 hover:bg-opacity-20 text-white px-4 py-3 rounded-xl text-sm transition-all flex items-center justify-center">
-                        <i class="fas fa-balance-scale mr-2 text-purple-400"></i>Écarts & Fraudes
+                        <i class="fas fa-balance-scale mr-2 text-purple-400"></i>carts & Fraudes
                     </button>
                 </div>
             </div>
@@ -3778,7 +3610,7 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
             </div>
 
             <!-- Enhanced Results Area -->
-            <div id="resultsArea" class="hidden">
+            <div id="resultsArea" class="hidden">"
                 <div class="mb-4">
                     <h3 class="text-2xl font-bold text-white flex items-center">
                         <i class="fas fa-chart-pie mr-3 text-blue-400"></i>Résultats d'Analyse
@@ -3877,16 +3709,6 @@ PRODUCTION_TEMPLATE = """<!DOCTYPE html>
     <script>
         // Version avec addEventListener pour la fiabilité
         console.log('TOOL Interface SRMT - JavaScript chargé');
-
-        // Fonction toast pour notifications
-        function showToast(message, type = 'info') {
-            const colors = { info: '#3b82f6', success: '#10b981', error: '#ef4444', warning: '#f59e0b' };
-            const toast = document.createElement('div');
-            toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;color:#fff;font-size:14px;font-weight:500;background:${colors[type]||colors.info};box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:all 0.3s ease;`;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
-        }
 
         function setQuery(query) {
             document.getElementById('queryInput').value = query;

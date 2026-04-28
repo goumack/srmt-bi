@@ -36,9 +36,10 @@ COPY templates/ templates/
 COPY srmt_data_2020_2025.parquet .
 
 # Répertoires avec les bons droits
+# OpenShift exécute souvent avec un UID arbitraire (groupe 0)
 RUN mkdir -p /app/logs /app/cache && \
-    chown -R srmt:srmt /app && \
-    chmod -R 775 /app
+    chown -R srmt:0 /app && \
+    chmod -R g=u /app
 
 # Variables d'environnement
 ENV PYTHONUNBUFFERED=1 \
@@ -48,7 +49,7 @@ ENV PYTHONUNBUFFERED=1 \
     PRODUCTION=true \
     DATA_FILE=./srmt_data_2020_2025.parquet \
     MAX_WORKERS=2 \
-    REQUEST_TIMEOUT=60 \
+    REQUEST_TIMEOUT=120 \
     LOG_LEVEL=INFO
 
 # Port OpenShift standard

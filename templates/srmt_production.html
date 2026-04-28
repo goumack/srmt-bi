@@ -1,13 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRMT Intelligence — Plateforme d'Analyse Fiscale</title>
+    <title>LexFIN — Assistant BI SRMT</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Phosphor Icons v2 -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
     <style>
         /* ═══════════════════════════════════════════════════════════════
            SRMT INTELLIGENCE — DESIGN SYSTEM v3.0
@@ -235,9 +237,19 @@
         html[data-mode="light"] .sidebar-header { border-bottom-color: rgba(15,23,42,0.06); }
         html[data-mode="light"] .sidebar-footer  { border-top-color: rgba(15,23,42,0.06); }
         html[data-mode="light"] .sidebar-section-label { color: #94A3B8; }
+        html[data-mode="light"] .folder-item { color: #475569; }
+        html[data-mode="light"] .folder-item:hover { background: rgba(15,23,42,0.04); color: #0F172A; }
+        html[data-mode="light"] .folder-item.active { background: rgba(59,130,246,0.07); }
         html[data-mode="light"] .history-item { color: #475569; }
         html[data-mode="light"] .history-item:hover { background: rgba(15,23,42,0.04); color: #0F172A; }
         html[data-mode="light"] .history-item.active { background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.15); }
+        html[data-mode="light"] .sidebar-search input { background: rgba(0,0,0,0.04); border-color: rgba(15,23,42,0.1); color: #0f172a; }
+        html[data-mode="light"] .sidebar-search input:focus { border-color: rgba(59,130,246,0.4); }
+        html[data-mode="light"] .btn-new-project { color: #475569; }
+        html[data-mode="light"] .btn-new-project:hover { background: rgba(15,23,42,0.04); color: #0F172A; }
+        html[data-mode="light"] .btn-new-project-icon { background: rgba(0,0,0,0.07); }
+        html[data-mode="light"] .sidebar-icon-btn { color: #64748B; }
+        html[data-mode="light"] .sidebar-icon-btn:hover { background: rgba(15,23,42,0.05); color: #0F172A; }
         html[data-mode="light"] .btn-new-chat { background: rgba(15,23,42,0.04); border-color: rgba(15,23,42,0.1); color: #0F172A; }
         html[data-mode="light"] .btn-new-chat:hover { background: rgba(15,23,42,0.08); }
         html[data-mode="light"] .btn-sidebar-close,
@@ -448,6 +460,8 @@
         .stat-card.purple::before { background: linear-gradient(180deg, var(--accent-purple), #A78BFA); }
         .stat-card.gold::before { background: linear-gradient(180deg, var(--accent-gold), var(--accent-orange)); }
 
+        /* REMOVED: .stat-icon styles - icons removed from stat cards */
+        /*
         .stat-icon {
             width: 48px; height: 48px;
             border-radius: var(--radius-md);
@@ -458,6 +472,7 @@
         .stat-icon.green { background: rgba(16, 185, 129, 0.12); color: var(--accent-green-light); }
         .stat-icon.purple { background: rgba(139, 92, 246, 0.12); color: #A78BFA; }
         .stat-icon.gold { background: rgba(245, 158, 11, 0.12); color: var(--accent-gold-light); }
+        */
 
         .stat-value {
             font-size: 1.75rem;
@@ -485,7 +500,7 @@
 
         .search-input {
             width: 100%;
-            padding: 16px 20px 16px 52px;
+            padding: 16px 20px; /* Removed left padding for icon */
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius-lg);
@@ -505,6 +520,8 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), var(--glow-blue);
         }
 
+        /* REMOVED: .search-icon - search icon removed from input */
+        /*
         .search-icon {
             position: absolute;
             left: 18px;
@@ -514,6 +531,7 @@
             font-size: 18px;
             transition: color 0.3s;
         }
+        */
 
         .btn-analyze {
             padding: 16px 32px;
@@ -579,12 +597,15 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
+        /* REMOVED: .section-icon - icons removed from result sections */
+        /*
         .section-icon {
             width: 40px; height: 40px;
             border-radius: var(--radius-sm);
             display: flex; align-items: center; justify-content: center;
             font-size: 18px;
         }
+        */
 
         .section-title {
             font-size: 1.15rem;
@@ -898,7 +919,189 @@
         }
         .btn-primary-sm:hover {
             box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+        }
+
+        /* ── Model Selector (Custom Dropdown) ──────────── */
+        .model-selector-wrapper {
+            position: relative;
+        }
+        
+        .model-selector-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(59, 130, 246, 0.08));
+            border: 1.5px solid rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            min-width: 200px;
+        }
+        
+        .model-selector-btn:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(59, 130, 246, 0.12));
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
             transform: translateY(-1px);
+        }
+        
+        .model-selector-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(59, 130, 246, 0.15));
+            border-color: var(--accent-blue);
+        }
+        
+        .model-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        
+        .model-name {
+            flex: 1;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* REMOVED: .model-chevron - chevron icon removed from model selector */
+        /*
+        .model-chevron {
+            color: var(--text-secondary);
+            transition: transform 0.3s;
+            font-size: 0.75rem;
+        }
+        
+        .model-selector-btn.active .model-chevron {
+            transform: rotate(180deg);
+        }
+        */
+        
+        .model-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: var(--surface-elevated);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 450px;
+            overflow-y: auto;
+        }
+        
+        .model-dropdown.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+        
+        .model-group-label {
+            padding: 12px 16px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        
+        .model-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        .model-option:last-child {
+            border-bottom: none;
+        }
+        
+        .model-option:hover {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.06));
+        }
+        
+        .model-option.selected {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1));
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .model-option-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .model-option-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        
+        .model-option-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+        
+        .model-speed-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            flex-shrink: 0;
+        }
+        
+        .model-speed-badge.fast {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green-light);
+        }
+        
+        .model-speed-badge.medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-gold-light);
+        }
+        
+        .model-speed-badge.slow {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red-light);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .model-selector-btn {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .model-dropdown {
+                left: 0;
+                right: 0;
+                max-height: 60vh;
+            }
         }
 
         /* ── Footer ──────────────────────────────────────── */
@@ -925,7 +1128,7 @@
             .stat-value { font-size: 1.35rem; }
             .stat-icon { width: 40px; height: 40px; font-size: 18px; }
             .search-container { padding: 20px; }
-            .search-input { padding: 14px 16px 14px 44px; font-size: 0.9rem; }
+            .search-input { padding: 14px 16px; font-size: 0.9rem; } /* Removed left padding for icon */
             .btn-analyze { padding: 14px 24px; font-size: 0.9rem; }
             .kpi-grid { grid-template-columns: repeat(2, 1fr); }
             .result-section { padding: 20px; }
@@ -1039,102 +1242,180 @@
         }
 
         /* Sidebar header */
+        /* ── Sidebar Header (logo + actions) ─────────── */
         .sidebar-header {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 12px 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sidebar-header-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
+            padding: 4px 0 8px;
         }
-
-        .btn-new-chat {
-            flex: 1;
-            display: flex; align-items: center; gap: 8px;
-            padding: 10px 14px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--radius-md);
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
             color: var(--text-primary);
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
+            letter-spacing: -0.01em;
         }
-        .btn-new-chat:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.18);
+        .sidebar-brand-logo {
+            width: 26px; height: 26px;
+            border-radius: 7px;
+            flex-shrink: 0;
         }
-
-        .btn-sidebar-close {
-            width: 36px; height: 36px;
+        .sidebar-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sidebar-icon-btn {
+            width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.06);
+            border: none;
             border-radius: var(--radius-sm);
             color: var(--text-muted);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
             flex-shrink: 0;
         }
-        .btn-sidebar-close:hover {
-            background: rgba(255,255,255,0.06);
+        .sidebar-icon-btn:hover {
+            background: rgba(255,255,255,0.08);
             color: var(--text-primary);
         }
 
-        /* Sidebar body — conversation list */
+        /* ── Search bar ─────────────────────────── */
+        .sidebar-search {
+            position: relative;
+            margin: 0 0 6px;
+        }
+        .sidebar-search input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 10px 8px 34px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .sidebar-search input:focus {
+            border-color: rgba(59,130,246,0.4);
+            background: rgba(255,255,255,0.08);
+        }
+        .sidebar-search input::placeholder { color: var(--text-muted); }
+        .sidebar-search-icon {
+            position: absolute;
+            left: 10px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        /* ── New project button ────────────────────── */
+        .btn-new-project {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%;
+            padding: 8px 10px;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.83rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+        }
+        .btn-new-project:hover {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-primary);
+        }
+        .btn-new-project-icon {
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        /* ── Sidebar body ──────────────────────────── */
         .sidebar-body {
             flex: 1;
             overflow-y: auto;
-            padding: 8px;
+            padding: 4px 8px 8px;
         }
+        .sidebar-body::-webkit-scrollbar { width: 3px; }
+        .sidebar-body::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
 
+        /* ── Section divider label ───────────────────── */
         .sidebar-section-label {
-            padding: 10px 12px 6px;
-            font-size: 0.68rem;
+            padding: 14px 8px 4px;
+            font-size: 0.67rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.07em;
             color: var(--text-muted);
+            opacity: 0.7;
         }
 
-        .history-item {
+        /* ── Folder (project) items ──────────────────── */
+        .folder-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: var(--radius-sm);
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: background 0.12s;
             color: var(--text-secondary);
-            font-size: 0.83rem;
-            line-height: 1.4;
+            font-size: 0.84rem;
             position: relative;
+            user-select: none;
         }
-        .history-item:hover {
-            background: rgba(255,255,255,0.06);
+        .folder-item:hover {
+            background: rgba(255,255,255,0.07);
             color: var(--text-primary);
         }
-        .history-item.active {
-            background: rgba(59, 130, 246, 0.1);
+        .folder-item.active {
+            background: rgba(255,255,255,0.1);
             color: var(--text-primary);
-            border: 1px solid rgba(59, 130, 246, 0.15);
         }
-        .history-item .history-text {
-            flex: 1;
+        .folder-icon {
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+            width: 18px;
+        }
+        .folder-item.active .folder-icon,
+        .folder-item:hover .folder-icon { color: var(--text-secondary); }
+        .folder-item-body {
+            flex: 1; min-width: 0;
+        }
+        .folder-name {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-size: 0.84rem;
+            line-height: 1.35;
         }
-        .history-item .history-icon {
-            flex-shrink: 0;
-            width: 18px;
-            font-size: 13px;
+        .folder-meta {
+            font-size: 0.67rem;
             color: var(--text-muted);
+            margin-top: 1px;
         }
-        .history-item .history-delete {
+        .folder-menu-btn {
             flex-shrink: 0;
-            width: 24px; height: 24px;
+            width: 22px; height: 22px;
             display: none;
             align-items: center; justify-content: center;
             background: transparent;
@@ -1142,28 +1423,101 @@
             border-radius: 4px;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 12px;
-            transition: all 0.15s;
+            transition: all 0.12s;
+            padding: 0;
         }
-        .history-item:hover .history-delete {
-            display: flex;
-        }
-        .history-item .history-delete:hover {
-            background: rgba(239,68,68,0.15);
-            color: var(--accent-red-light);
+        .folder-item:hover .folder-menu-btn,
+        .folder-item.active .folder-menu-btn { display: flex; }
+        .folder-menu-btn:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+
+        /* rename inline input */
+        .folder-rename-input {
+            width: 100%; padding: 2px 5px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(59,130,246,0.45);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 0.84rem;
+            outline: none;
         }
 
-        .history-empty {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-muted);
+        /* ── Context menu (Renommer / Supprimer) ───────── */
+        .project-context-menu {
+            position: fixed;
+            z-index: 500;
+            min-width: 170px;
+            background: #1e2535;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+            padding: 4px;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.94) translateY(-4px);
+            transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+            pointer-events: none;
         }
-        .history-empty i {
-            font-size: 32px;
-            margin-bottom: 12px;
-            display: block;
-            opacity: 0.4;
+        .project-context-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
         }
+        .project-context-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px 13px;
+            background: transparent;
+            border: none;
+            border-radius: 7px;
+            color: #cbd5e1;
+            font-size: 0.83rem;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .project-context-menu-item:hover {
+            background: rgba(255,255,255,0.09);
+            color: #f1f5f9;
+        }
+        .project-context-menu-item.danger { color: #fca5a5; }
+        .project-context-menu-item.danger:hover {
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+        }
+        html[data-mode="light"] .project-context-menu {
+            background: #fff;
+            border-color: rgba(15,23,42,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+        html[data-mode="light"] .project-context-menu-item { color: #374151; }
+        html[data-mode="light"] .project-context-menu-item:hover { background: #f1f5f9; color: #0f172a; }
+        html[data-mode="light"] .project-context-menu-item.danger { color: #dc2626; }
+
+        /* ── History item (legacy, kept for fallback) ───── */
+        .history-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.12s;
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+        }
+        .history-item:hover { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+        .history-item.active { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        .history-item .history-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .history-item .history-icon { flex-shrink:0; width:18px; color:var(--text-muted); }
+        .history-item .history-delete {
+            flex-shrink:0; width:22px; height:22px; display:none;
+            align-items:center; justify-content:center; background:transparent;
+            border:none; border-radius:4px; color:var(--text-muted); cursor:pointer;
+        }
+        .history-item:hover .history-delete { display:flex; }
+        .history-item .history-delete:hover { background:rgba(239,68,68,0.15); color:#f87171; }
 
         /* Sidebar footer */
         .sidebar-footer {
@@ -1195,18 +1549,39 @@
         .btn-sidebar-toggle {
             width: 38px; height: 38px;
             display: flex; align-items: center; justify-content: center;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(59, 130, 246, 0.1);  /* Bleu subtil pour attirer l'attention */
+            border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: var(--radius-sm);
-            color: var(--text-secondary);
+            color: #3B82F6;  /* Bleu */
             cursor: pointer;
             transition: all 0.2s;
             flex-shrink: 0;
+            position: relative;
+        }
+        .btn-sidebar-toggle::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: #3B82F6;
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
         }
         .btn-sidebar-toggle:hover {
-            background: rgba(255,255,255,0.06);
-            color: var(--text-primary);
-            border-color: rgba(255,255,255,0.15);
+            background: rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: scale(1.05);
+        }
+        .btn-sidebar-toggle:hover::after {
+            animation: none;
+            opacity: 0;
         }
 
         /* ── Profile Dropdown ─────────────────────────── */
@@ -1494,349 +1869,1217 @@
             opacity: 1;
             transform: scale(1);
         }
+
+        /* ═══════════════════════════════════════════════════════
+           LexFIN — Interface style ChatGPT
+           ═══════════════════════════════════════════════════════ */
+
+        body.LexFIN-ui {
+        body.LexFIN-ui {
+            --bg-base:        #0d1117;
+            --bg-primary:     #161b22;
+            --bg-secondary:   #1c2128;
+            --bg-elevated:    #21262d;
+            --text-primary:   #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted:     #484f58;
+            --glass-bg:       #161b22;
+            --glass-border:   #30363d;
+            --bg-sidebar:     #0d1117;
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: 'Inter', sans-serif;
+        }
+        /* ── LexFIN UI — Mode Clair ── */
+        html[data-mode="light"] body.LexFIN-ui {
+            --bg-base:        #f3f4f6;
+            --bg-primary:     #ffffff;
+            --bg-secondary:   #f8fafc;
+            --bg-elevated:    #eef2f7;
+            --text-primary:   #111827;
+            --text-secondary: #4b5563;
+            --text-muted:     #9ca3af;
+            --glass-bg:       #ffffff;
+            --glass-border:   #e5e7eb;
+            --bg-sidebar:     #f8fafc;
+            background: #f3f4f6;
+            color: #111827;
+        }
+        body.LexFIN-ui::before { display: none !important; }
+
+        /* Hide legacy elements */
+        body.LexFIN-ui .app-header,
+        body.LexFIN-ui .app-footer,
+        body.LexFIN-ui .stat-card,
+        body.LexFIN-ui .model-selector-wrapper {
+            display: none !important;
+        }
+
+        /* ── Layout ── */
+        body.LexFIN-ui .app-layout { display: flex; height: 100vh; overflow: hidden; }
+
+        /* ── Sidebar ── */
+        body.LexFIN-ui .sidebar {
+            width: 260px; min-width: 260px;
+            height: 100vh; background: var(--bg-sidebar);
+            border-right: 1px solid var(--glass-border);
+            box-shadow: none; top: 0;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        body.LexFIN-ui .sidebar.open { transform: translateX(0); }
+        body.LexFIN-ui .sidebar.open ~ .app-main { margin-left: 260px; }
+        body.LexFIN-ui .sidebar-header {
+            padding: 10px; border-bottom: 1px solid #e5e5e5;
+            display: flex; align-items: center; gap: 8px;
+        }
+        body.LexFIN-ui .btn-new-chat {
+            flex: 1; display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; background: transparent; border: none;
+            color: #0d0d0d; font-size: 0.85rem; font-weight: 500;
+            cursor: pointer; border-radius: 6px; justify-content: flex-start;
+            transition: background 0.15s;
+        }
+        body.LexFIN-ui .btn-new-chat:hover { background: #e5e5e5; }
+        body.LexFIN-ui .btn-sidebar-close {
+            width: 32px; height: 32px; background: transparent;
+            border: 1px solid #e5e5e5; border-radius: 6px; color: #8e8ea0;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1.1rem; flex-shrink: 0;
+        }
+        body.LexFIN-ui .btn-sidebar-close:hover { background: #e5e5e5; color: #0d0d0d; }
+        body.LexFIN-ui .sidebar-body { flex: 1; overflow-y: auto; padding: 6px; }
+        body.LexFIN-ui .sidebar-section-label {
+            padding: 8px 10px 4px; font-size: 0.7rem; color: #8e8ea0;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        body.LexFIN-ui .history-item {
+            display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+            border-radius: 6px; cursor: pointer; color: #0d0d0d;
+            font-size: 0.83rem; line-height: 1.4; position: relative;
+            border: 1px solid transparent;
+        }
+        body.LexFIN-ui .history-item:hover { background: #e5e5e5; }
+        body.LexFIN-ui .history-item.active { background: #ececec; border-color: #d5d5d5; }
+        body.LexFIN-ui .history-empty {
+            text-align: center; padding: 32px 16px; color: #8e8ea0; font-size: 0.82rem;
+        }
+        body.LexFIN-ui .history-empty i { font-size: 24px; color: #d1d5db; margin-bottom: 8px; display: block; }
+        body.LexFIN-ui .sidebar-footer { border-top: 1px solid #e5e5e5; padding: 8px; }
+        body.LexFIN-ui .sidebar-footer-btn {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            padding: 8px 10px; background: transparent; border: none;
+            color: #0d0d0d; font-size: 0.83rem; cursor: pointer;
+            border-radius: 6px; transition: background 0.15s;
+        }
+        body.LexFIN-ui .sidebar-footer-btn:hover { background: #e5e5e5; }
+
+        /* ── Sidebar footer user/brand ── */
+        .LexFIN-sidebar-mode-btn {
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            padding: 8px 10px; background: transparent; border: none;
+            color: #0d0d0d; font-size: 0.83rem; cursor: pointer;
+            border-radius: 6px; transition: background 0.15s;
+        }
+        .LexFIN-sidebar-mode-btn:hover { background: #e5e5e5; }
+        .LexFIN-user-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 8px; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .LexFIN-user-row:hover { background: #e5e5e5; }
+        .LexFIN-user-avatar {
+            width: 34px; height: 34px; border-radius: 50%; background: #19c37d;
+            color: white; font-size: 0.88rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .LexFIN-user-info { flex: 1; min-width: 0; }
+        .LexFIN-user-name {
+            font-size: 0.82rem; font-weight: 600; color: #0d0d0d;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .LexFIN-user-email {
+            font-size: 0.7rem; color: #8e8ea0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ── Main area ── */
+        body.LexFIN-ui .app-main {
+            flex: 1; min-width: 0; height: 100vh;
+            display: flex; flex-direction: column; background: #ffffff;
+            transition: margin-left 0.3s ease; overflow: hidden;
+        }
+
+        /* ── Chat Header ── */
+        .chat-gpt-header {
+            height: 52px; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 16px;
+            border-bottom: 1px solid #e5e5e5; flex-shrink: 0; background: #ffffff;
+        }
+        .chat-gpt-header-left { display: flex; align-items: center; gap: 10px; position: relative; }
+        .chat-gpt-header-right { display: flex; align-items: center; gap: 10px; }
+        .chat-gpt-menu-btn {
+            width: 36px; height: 36px; display: flex; align-items: center;
+            justify-content: center; background: transparent; border: none;
+            border-radius: 8px; color: #0d0d0d; cursor: pointer; transition: background 0.15s;
+        }
+        .chat-gpt-menu-btn:hover { background: #f4f4f4; }
+        .model-badge-btn {
+            display: flex; align-items: center; gap: 5px; padding: 5px 12px;
+            background: transparent; border: none; border-radius: 8px;
+            font-size: 0.88rem; font-weight: 600; color: #0d0d0d;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .model-badge-btn:hover { background: #f4f4f4; }
+
+        /* ── Chat Area ── */
+        .chat-area { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+
+        /* ══ LexFin Legal Panel ══════════════════════════════════════ */
+        .lexfin-panel {
+            display: none; flex: 1; overflow-y: auto;
+            scroll-behavior: smooth; flex-direction: column;
+        }
+        .lexfin-panel.active { display: flex; }
+
+        /* LexFin welcome */
+        .lf-welcome {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: 100%;
+            padding: 40px 24px 20px; text-align: center;
+        }
+        .lf-welcome-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #f0fdf4; border: 1px solid #bbf7d0;
+            color: #15803d; font-size: 0.72rem; font-weight: 700;
+            padding: 4px 12px; border-radius: 999px; margin-bottom: 16px;
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .lf-welcome-icon {
+            font-size: 3rem; margin-bottom: 12px; line-height: 1;
+        }
+        .lf-welcome-title {
+            font-size: 1.9rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;
+        }
+        .lf-welcome-sub {
+            font-size: 0.95rem; color: #64748b; margin-bottom: 30px; max-width: 440px;
+        }
+        .lf-suggestions {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; max-width: 600px; width: 100%;
+        }
+        .lf-card {
+            background: #fff; border: 1px solid #e5e7eb;
+            border-radius: 14px; padding: 14px 16px;
+            font-size: 0.86rem; color: #0f172a; cursor: pointer;
+            text-align: left; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+            display: flex; align-items: flex-start; gap: 10px;
+        }
+        .lf-card i { font-size: 1.1rem; color: #10b981; margin-top: 1px; flex-shrink: 0; }
+        .lf-card:hover { background: #f0fdf4; border-color: #86efac; box-shadow: 0 2px 8px rgba(16,185,129,0.1); }
+
+        /* LexFin messages */
+        .lf-messages { flex: 1; padding: 12px 20px 0; }
+
+        /* LexFin avatar (scales icon) */
+        .lf-avatar-msg {
+            width: 26px; height: 26px; border-radius: 8px;
+            background: linear-gradient(135deg,#059669,#10b981);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 2px; font-size: 0.85rem;
+        }
+
+        /* Dark mode overrides for LexFin panel */
+        body.LexFIN-ui .lexfin-panel { background: #0d1117; }
+        body.LexFIN-ui .lf-welcome-badge { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.25); color: #34d399; }
+        body.LexFIN-ui .lf-welcome-title { color: #e6edf3; }
+        body.LexFIN-ui .lf-welcome-sub { color: #8b949e; }
+        body.LexFIN-ui .lf-card { background: #161b22; border-color: #30363d; color: #e6edf3; }
+        body.LexFIN-ui .lf-card:hover { background: #1a2f22; border-color: #34d399; }
+
+        /* ── Welcome Screen ── */
+        .welcome-screen {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: 100%;
+            padding: 40px 24px 20px; text-align: center;
+        }
+        .welcome-logo { width: 60px; height: 60px; margin: 0 auto 14px; }
+        .welcome-title { font-size: 2rem; font-weight: 700; color: #0d0d0d; margin-bottom: 6px; }
+        .welcome-subtitle { font-size: 0.95rem; color: #8e8ea0; margin-bottom: 28px; }
+        .welcome-suggestions {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; max-width: 620px; width: 100%;
+        }
+        .welcome-card {
+            background: #ffffff; border: 1px solid #e5e5e5;
+            border-radius: 14px; padding: 14px 16px;
+            font-size: 0.88rem; color: #0d0d0d; cursor: pointer;
+            text-align: left; transition: background 0.15s, border-color 0.15s;
+            line-height: 1.45; min-height: 56px; font-family: 'Inter', sans-serif;
+        }
+        .welcome-card:hover { background: #f9f9f9; border-color: #d5d5d5; }
+
+        /* ── Messages ── */
+        .messages-container { padding: 20px 0 40px; display: none; }
+        .messages-container.active { display: block; }
+        .message-row { max-width: 768px; margin: 0 auto; padding: 8px 24px; }
+        .message-row.user { display: flex; justify-content: flex-end; }
+        .message-row.assistant { display: flex; justify-content: flex-start; gap: 12px; align-items: flex-start; }
+        .user-bubble {
+            background: #f4f4f4; border-radius: 18px; padding: 10px 16px;
+            max-width: 75%; font-size: 0.92rem; color: #0d0d0d;
+            line-height: 1.55; word-wrap: break-word; white-space: pre-wrap;
+        }
+        .ai-avatar-msg {
+            width: 30px; height: 30px; border-radius: 50%; background: #0f172a;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 2px;
+        }
+        .ai-message-content {
+            flex: 1; font-size: 0.92rem; color: #0d0d0d;
+            line-height: 1.7; max-width: calc(100% - 42px); overflow-wrap: break-word;
+        }
+        .ai-message-content h3,
+        .ai-message-content h4 { color: #0d0d0d; font-weight: 600; margin: 12px 0 6px; font-size: 1rem; }
+        .ai-message-content strong { color: #0d0d0d; font-weight: 600; }
+        .ai-message-content p { margin-bottom: 8px; }
+        .ai-message-content ul,
+        .ai-message-content ol { padding-left: 20px; margin-bottom: 8px; }
+        .ai-message-content li { margin-bottom: 4px; }
+        .ai-message-content pre {
+            background: #f4f4f4; border-radius: 8px; padding: 12px;
+            overflow-x: auto; font-size: 0.82rem; margin: 8px 0;
+        }
+        .ai-message-content code { background: #f4f4f4; border-radius: 4px; padding: 1px 5px; font-size: 0.85em; }
+        .ai-message-content table {
+            width: 100%; border-collapse: collapse; font-size: 0.84rem;
+            margin: 10px 0; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden;
+        }
+        .ai-message-content th {
+            background: #f9f9f9; padding: 8px 12px; text-align: left;
+            font-weight: 600; border-bottom: 1px solid #e5e5e5; color: #374151;
+        }
+        .ai-message-content td { padding: 7px 12px; border-bottom: 1px solid #f4f4f4; color: #374151; }
+        .ai-message-content tr:last-child td { border-bottom: none; }
+        .ai-message-content tr:hover td { background: #fafafa; }
+
+        /* Loading dots */
+        .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+        .typing-dots span {
+            width: 7px; height: 7px; border-radius: 50%; background: #8e8ea0;
+            animation: bounce-dot 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce-dot {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* ── Input Area ── */
+        .chat-input-area { flex-shrink: 0; padding: 10px 24px 18px; background: #ffffff; }
+        .chat-input-inner { max-width: 768px; margin: 0 auto; }
+        .chat-input-box {
+            display: flex; align-items: flex-end; gap: 8px; background: #ffffff;
+            border: 1px solid #d5d5d5; border-radius: 16px; padding: 10px 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .chat-input-box:focus-within { border-color: #acacac; box-shadow: 0 2px 16px rgba(0,0,0,0.1); }
+        .chat-input-box textarea {
+            flex: 1; border: none; background: transparent; resize: none;
+            outline: none; font-family: 'Inter', sans-serif;
+            font-size: 0.93rem; color: #0d0d0d; max-height: 200px;
+            min-height: 24px; line-height: 1.55; overflow-y: auto;
+        }
+        .chat-input-box textarea::placeholder { color: #8e8ea0; }
+        .chat-send-btn {
+            width: 34px; height: 34px; border-radius: 8px; border: none;
+            background: #19c37d; color: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+        }
+        .chat-send-btn:hover { background: #0ea570; }
+        .chat-send-btn:active { transform: scale(0.95); }
+        .chat-send-btn:disabled { background: #d5d5d5; cursor: not-allowed; }
+        .chat-input-footer { text-align: center; font-size: 0.72rem; color: #8e8ea0; margin-top: 8px; }
+
+        /* ══ View Mode Toggle — MUI Segmented Control ══════════════════ */
+        .chat-input-inner { position: relative; }
+
+        /* ── Mode switch button (single toggle) ── */
+        .mode-switch-btn {
+            display: flex; align-items: center; gap: 6px;
+            flex-shrink: 0;
+            padding: 5px 12px 5px 9px;
+            border-radius: 999px;
+            border: 1.5px solid #e2e8f0;
+            background: #f8fafc;
+            cursor: pointer;
+            font-size: 0.72rem; font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            color: #10b981;
+            transition: all 0.2s cubic-bezier(.4,0,.2,1);
+            white-space: nowrap; line-height: 1;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .mode-switch-btn i { font-size: 0.9rem; transition: transform 0.25s; }
+        .mode-switch-btn:hover { border-color: #10b981; background:#f0fdf8; }
+        .mode-switch-btn.app-mode { color: #3b82f6; }
+        .mode-switch-btn.app-mode:hover { border-color: #3b82f6; background:#eff6ff; }
+
+        /* ══ App Dashboard Panel ══════════════════════════════════════ */
+        .app-dashboard-panel {
+            display: none; flex: 1; overflow-y: auto;
+            padding: 22px 28px 12px;
+            flex-direction: column; gap: 22px;
+        }
+        .app-dashboard-panel.active { display: flex; }
+        @keyframes fadeInPanel {
+            from { opacity:0; transform:translateY(12px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .app-dashboard-panel.active { animation: fadeInPanel 0.22s ease; }
+
+        /* KPI row */
+        .kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+        @media(max-width:900px){ .kpi-row { grid-template-columns: repeat(2,1fr); } }
+        .kpi-tile {
+            background: #fff; border-radius: 14px;
+            padding: 16px 18px; border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative; overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .kpi-tile:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.09); }
+        .kpi-tile-accent {
+            position: absolute; top:0; left:0; right:0; height:3px;
+            background: var(--kpi-color,#10b981);
+        }
+        .kpi-tile-icon {
+            width:34px; height:34px; border-radius:9px;
+            background: color-mix(in srgb, var(--kpi-color,#10b981) 13%, white);
+            color: var(--kpi-color,#10b981);
+            display:flex; align-items:center; justify-content:center;
+            font-size:1rem; margin-bottom:10px;
+        }
+        .kpi-tile-label { font-size:0.68rem; color:#9ca3af; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
+        .kpi-tile-value { font-size:1.25rem; font-weight:700; color:#111827; line-height:1.2; }
+        .kpi-tile-sub   { font-size:0.68rem; color:#6b7280; margin-top:4px; }
+
+        /* Quick actions */
+        .app-section-title { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#9ca3af; margin-bottom:10px; }
+        .qa-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+        @media(max-width:700px){ .qa-grid { grid-template-columns:1fr 1fr; } }
+        .qa-btn {
+            display:flex; align-items:center; gap:10px;
+            padding:12px 14px; border-radius:12px;
+            border:1.5px solid #f1f5f9; background:#fff;
+            cursor:pointer; transition:all 0.16s;
+            text-align:left; font-family:'Inter',sans-serif;
+        }
+        .qa-btn:hover { border-color:var(--qa-color,#10b981); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.07); }
+        .qa-icon { width:30px; height:30px; border-radius:8px; background:var(--qa-color,#10b981); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0; }
+        .qa-label { font-size:0.76rem; font-weight:600; color:#111827; }
+        .qa-desc  { font-size:0.66rem; color:#9ca3af; margin-top:1px; }
+
+        /* Dark mode */
+        body.LexFIN-ui .mode-switch-btn { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1); color:#34d399; }
+        body.LexFIN-ui .mode-switch-btn.app-mode { color:#60a5fa; }
+        body.LexFIN-ui .mode-switch-btn:hover { background:rgba(255,255,255,0.1); }
+        body.LexFIN-ui .view-mode-seg { color:#9ca3af; }
+        body.LexFIN-ui .view-mode-seg.active { background:rgba(255,255,255,0.12); box-shadow:0 1px 4px rgba(0,0,0,0.35); }
+        body.LexFIN-ui .view-mode-seg.lf-seg.active  { color:#10b981; }
+        body.LexFIN-ui .view-mode-seg.app-seg.active { color:#60a5fa; }
+        body.LexFIN-ui .kpi-tile { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.08); }
+        body.LexFIN-ui .kpi-tile-value { color:#e5e7eb; }
+        body.LexFIN-ui .kpi-tile-sub { color:#9ca3af; }
+        body.LexFIN-ui .qa-btn { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.08); }
+        body.LexFIN-ui .qa-label { color:#e5e7eb; }
+        html[data-mode="light"] body.LexFIN-ui .kpi-tile { background:#fff; border-color:#f1f5f9; }
+        html[data-mode="light"] body.LexFIN-ui .kpi-tile-value { color:#111827; }
+        html[data-mode="light"] body.LexFIN-ui .qa-btn { background:#fff; border-color:#f1f5f9; }
+        html[data-mode="light"] body.LexFIN-ui .qa-label { color:#111827; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            body.LexFIN-ui .sidebar.open ~ .app-main { margin-left: 0; }
+            body.LexFIN-ui .sidebar { z-index: 60; }
+            .message-row { padding: 8px 16px; }
+        }
+        @media (max-width: 600px) {
+            .welcome-suggestions { grid-template-columns: 1fr; }
+            .chat-input-area { padding: 8px 12px 14px; }
+        }
+
+        /* Keep for LexFin widget compatibility */
+        .LexFIN-topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background: #f3f4f6;
+            border-bottom: 1px solid #e5e7eb;
+            z-index: 70;
+        }
+        .LexFIN-topbar-left {
+            display: flex;
+            align-items: center;
+        }
+        .LexFIN-apps-btn {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; background: transparent;
+            color: #6b7280; cursor: pointer; border-radius: 6px;
+        }
+        .LexFIN-apps-btn:hover { background: #e5e7eb; color: #374151; }
+        .LexFIN-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .LexFIN-favorites-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px;
+            border: none; background: transparent;
+            color: #6b7280; font-size: 0.8rem; cursor: pointer;
+            border-radius: 6px;
+        }
+        .LexFIN-favorites-btn:hover { background: #e5e7eb; color: #374151; }
+
+        /* ── Sidebar overrides ── */
+        body.LexFIN-ui .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: #f8fafc;
+            border-right: 1px solid #e5e7eb;
+            box-shadow: none;
+            top: 40px;
+            height: calc(100vh - 40px);
+        }
+        body.LexFIN-ui .sidebar.open ~ .app-main { margin-left: 260px; }
+        body.LexFIN-ui .sidebar.open ~ .app-main .app-header { left: 260px; width: calc(100% - 260px); }
+
+        body.LexFIN-ui .sidebar-header {
+            padding: 14px 12px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: center; gap: 8px;
+        }
+        body.LexFIN-ui .btn-new-chat {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #111827;
+            font-size: 0.88rem;
+            font-weight: 600;
+            justify-content: flex-start;
+            padding: 6px 4px;
+            gap: 6px;
+        }
+        body.LexFIN-ui .btn-new-chat:hover { background: #eef2f7; border-radius: 8px; }
+        body.LexFIN-ui .btn-sidebar-close {
+            border-color: #e5e7eb;
+            color: #9ca3af;
+        }
+        body.LexFIN-ui .btn-sidebar-close:hover { background: #eef2f7; color: #374151; }
+
+        body.LexFIN-ui .sidebar-body { padding: 6px 8px; }
+
+        body.LexFIN-ui .history-item {
+            color: #4b5563;
+            font-size: 0.83rem;
+        }
+        body.LexFIN-ui .history-item:hover { background: #eef2f7; color: #111827; }
+        body.LexFIN-ui .history-item.active {
+            background: rgba(59,130,246,0.07);
+            border-color: rgba(59,130,246,0.15);
+            color: #1d4ed8;
+        }
+        body.LexFIN-ui .history-empty {
+            color: #9ca3af;
+            padding: 30px 16px;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+        body.LexFIN-ui .history-empty i { color: #d1d5db; }
+
+        /* ── LexFIN sidebar footer (user profile + branding) ── */
+        body.LexFIN-ui .sidebar-footer {
+            padding: 0;
+            border-top: 1px solid #e5e7eb;
+        }
+        .LexFIN-sidebar-mode-btn {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 11px 16px;
+            background: transparent; border: none;
+            color: #6b7280; font-size: 0.82rem; cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .LexFIN-sidebar-mode-btn:hover { background: #eef2f7; color: #374151; }
+
+        .LexFIN-user-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .LexFIN-user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: #2563eb;
+            color: white; font-size: 0.88rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .LexFIN-user-info { flex: 1; min-width: 0; }
+        .LexFIN-user-name {
+            font-size: 0.8rem; font-weight: 600;
+            color: #111827;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .LexFIN-user-email {
+            font-size: 0.7rem; color: #9ca3af;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .LexFIN-user-logout {
+            background: transparent; border: none;
+            color: #9ca3af; cursor: pointer; padding: 4px;
+            border-radius: 4px; font-size: 0.9rem;
+        }
+        .LexFIN-user-logout:hover { color: #374151; background: #eef2f7; }
+
+        .LexFIN-brand-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px 12px;
+        }
+        .LexFIN-brand-logo-sm {
+            width: 26px; height: 26px; flex-shrink: 0;
+        }
+        .LexFIN-brand-text { line-height: 1.2; }
+        .LexFIN-brand-name-sm {
+            font-size: 0.78rem; font-weight: 700; color: #111827;
+        }
+        .LexFIN-brand-tagline {
+            font-size: 0.67rem; color: #9ca3af;
+        }
+
+        /* ── Main area ── */
+        body.LexFIN-ui .app-main {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 40px;
+            background: #f3f4f6;
+        }
+        body.LexFIN-ui main {
+            max-width: 680px !important;
+            margin: 0 auto;
+            padding: 0 16px !important;
+            width: 100%;
+        }
+
+        /* ── Brand center ── */
+        .LexFIN-home {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+        .LexFIN-brand-center {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .LexFIN-acceltech-logo {
+            width: 52px; height: 52px;
+            margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .LexFIN-brand-center h2 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin: 0;
+        }
+        .LexFIN-brand-center p {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
+
+        /* ── Input bar ── */
+        .LexFIN-input-bar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 999px;
+            background: #ffffff;
+            padding: 6px 8px 6px 14px;
+            min-height: 52px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .LexFIN-globe-btn {
+            width: 34px; height: 34px; flex-shrink: 0;
+            border-radius: 50%;
+            background: #0d9488;
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer;
+            font-size: 0.82rem;
+            margin-right: 10px;
+        }
+        body.LexFIN-ui .search-input {
+            flex: 1;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            color: #111827;
+            font-size: 0.93rem;
+            height: auto;
+            padding: 0;
+            min-width: 0;
+            outline: none;
+        }
+        body.LexFIN-ui .search-input::placeholder { color: #9ca3af; }
+        .LexFIN-send-btn {
+            width: 36px; height: 36px; flex-shrink: 0;
+            border-radius: 10px;
+            background: #9ca3af;
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .LexFIN-send-btn:hover { background: #6b7280; }
+
+        /* ── Helper notes ── */
+        .LexFIN-web-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #0d9488;
+            margin-bottom: 4px;
+        }
+        .LexFIN-web-note .LexFIN-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #0d9488;
+            flex-shrink: 0;
+        }
+        .LexFIN-disclaimer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 24px;
+        }
+        .LexFIN-disclaimer a { color: #6b7280; text-decoration: underline; }
+
+        /* ── Suggestion cards ── */
+        .LexFIN-suggestions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .LexFIN-suggestion-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            color: #374151;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s, border-color 0.15s;
+            line-height: 1.4;
+            min-height: 56px;
+            display: flex; align-items: flex-start;
+        }
+        .LexFIN-suggestion-card:hover {
+            background: #f8fafc;
+            border-color: #d1d5db;
+            color: #111827;
+        }
+
+        @media (max-width: 1024px) {
+            body.LexFIN-ui .sidebar.open ~ .app-main { margin-left: 0; }
+            body.LexFIN-ui .app-main { justify-content: flex-start; }
+        }
+        @media (max-width: 600px) {
+            .LexFIN-suggestions-grid { grid-template-columns: 1fr; }
+            .LexFIN-topbar { left: 0; }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           LexFIN UI — MODE SOMBRE (dark par défaut, pas de data-mode)
+           ══════════════════════════════════════════════════════ */
+        body.LexFIN-ui .chat-gpt-header {
+            background: #161b22;
+            border-bottom-color: #30363d;
+        }
+        body.LexFIN-ui .chat-gpt-menu-btn { color: #e6edf3; }
+        body.LexFIN-ui .chat-gpt-menu-btn:hover { background: #21262d; }
+        body.LexFIN-ui .model-badge-btn { color: #e6edf3; }
+        body.LexFIN-ui .model-badge-btn:hover { background: #21262d; }
+
+        body.LexFIN-ui .chat-area { background: #0d1117; }
+        body.LexFIN-ui .chat-area { background: #0d1117 !important; }
+        body.LexFIN-ui .welcome-screen { color: #e6edf3 !important; }
+        body.LexFIN-ui .welcome-title { color: #e6edf3 !important; }
+        body.LexFIN-ui .welcome-subtitle { color: #8b949e !important; }
+        body.LexFIN-ui .welcome-card {
+            background: #161b22 !important; border-color: #30363d !important; color: #e6edf3 !important;
+        }
+        body.LexFIN-ui .welcome-card:hover { background: #21262d !important; border-color: #484f58 !important; }
+
+        body.LexFIN-ui .user-bubble { background: #21262d !important; color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content { color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content p,
+        body.LexFIN-ui .ai-message-content li,
+        body.LexFIN-ui .ai-message-content span { color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content h1,
+        body.LexFIN-ui .ai-message-content h2,
+        body.LexFIN-ui .ai-message-content h3,
+        body.LexFIN-ui .ai-message-content h4,
+        body.LexFIN-ui .ai-message-content h5,
+        body.LexFIN-ui .ai-message-content h6 { color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content strong,
+        body.LexFIN-ui .ai-message-content b { color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content em,
+        body.LexFIN-ui .ai-message-content i { color: #c9d1d9 !important; }
+        body.LexFIN-ui .ai-message-content pre { background: #161b22 !important; color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content code { background: #21262d !important; color: #f0883e !important; }
+        body.LexFIN-ui .ai-message-content pre code { background: transparent !important; color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content table { border-color: #30363d; }
+        body.LexFIN-ui .ai-message-content th { background: #161b22 !important; border-color: #30363d !important; color: #8b949e !important; }
+        body.LexFIN-ui .ai-message-content td { border-color: #21262d !important; color: #e6edf3 !important; }
+        body.LexFIN-ui .ai-message-content tr:hover td { background: #161b22 !important; }
+        body.LexFIN-ui .ai-message-content blockquote { border-left-color: #484f58; color: #8b949e !important; }
+        body.LexFIN-ui .ai-message-content a { color: #58a6ff !important; }
+        body.LexFIN-ui .messages-container { color: #e6edf3; }
+        body.LexFIN-ui .message-row { color: #e6edf3; }
+
+        body.LexFIN-ui .chat-input-area { background: #0d1117; }
+        body.LexFIN-ui .chat-input-box {
+            background: #161b22; border-color: #30363d;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        body.LexFIN-ui .chat-input-box:focus-within { border-color: #484f58; }
+        body.LexFIN-ui .chat-input-box textarea { color: #e6edf3; }
+        body.LexFIN-ui .chat-send-btn:disabled { background: #30363d; }
+
+        body.LexFIN-ui .sidebar-header { border-bottom-color: #30363d; }
+        body.LexFIN-ui .btn-new-chat { color: #e6edf3; }
+        body.LexFIN-ui .btn-new-chat:hover { background: #21262d; }
+        body.LexFIN-ui .btn-sidebar-close { border-color: #30363d; color: #8b949e; }
+        body.LexFIN-ui .btn-sidebar-close:hover { background: #21262d; color: #e6edf3; }
+        body.LexFIN-ui .history-item { color: #8b949e; }
+        body.LexFIN-ui .history-item:hover { background: #21262d; color: #e6edf3; }
+        body.LexFIN-ui .history-empty { color: #484f58; }
+        body.LexFIN-ui .history-empty i { color: #30363d; }
+        body.LexFIN-ui .sidebar-footer { border-top-color: #30363d; }
+        body.LexFIN-ui .LexFIN-sidebar-mode-btn { color: #8b949e; border-bottom-color: #30363d; }
+        body.LexFIN-ui .LexFIN-sidebar-mode-btn:hover { background: #21262d; color: #e6edf3; }
+        body.LexFIN-ui .LexFIN-user-row { border-bottom-color: #21262d; }
+        body.LexFIN-ui .LexFIN-user-name { color: #e6edf3; }
+        body.LexFIN-ui .LexFIN-brand-name-sm { color: #e6edf3; }
+
+        /* ══════════════════════════════════════════════════════
+           LexFIN UI — MODE CLAIR (html[data-mode="light"])
+           ══════════════════════════════════════════════════════ */
+        html[data-mode="light"] body.LexFIN-ui .chat-gpt-header {
+            background: #ffffff; border-bottom-color: #e5e5e5;
+        }
+        html[data-mode="light"] body.LexFIN-ui .chat-gpt-menu-btn { color: #0d0d0d; }
+        html[data-mode="light"] body.LexFIN-ui .chat-gpt-menu-btn:hover { background: #f4f4f4; }
+        html[data-mode="light"] body.LexFIN-ui .model-badge-btn { color: #0d0d0d; }
+        html[data-mode="light"] body.LexFIN-ui .model-badge-btn:hover { background: #f4f4f4; }
+        html[data-mode="light"] body.LexFIN-ui .chat-area { background: #ffffff; }
+        html[data-mode="light"] body.LexFIN-ui .chat-area { background: #ffffff !important; color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .welcome-screen { color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .welcome-title { color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .welcome-subtitle { color: #6b7280 !important; }
+        html[data-mode="light"] body.LexFIN-ui .welcome-card {
+            background: #ffffff !important; border-color: #e5e5e5 !important; color: #0d0d0d !important;
+        }
+        html[data-mode="light"] body.LexFIN-ui .welcome-card:hover { background: #f9f9f9 !important; border-color: #d5d5d5 !important; }
+        html[data-mode="light"] body.LexFIN-ui .user-bubble { background: #f4f4f4 !important; color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content { color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content p,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content li,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content span { color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content h1,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content h2,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content h3,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content h4,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content h5,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content h6 { color: #111827 !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content strong,
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content b { color: #111827 !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content pre { background: #f4f4f4 !important; color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content code { background: #eef0f2 !important; color: #c0392b !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content pre code { background: transparent !important; color: #0d0d0d !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content th { background: #f9f9f9 !important; color: #374151 !important; }
+        html[data-mode="light"] body.LexFIN-ui .ai-message-content td { color: #374151 !important; }
+        html[data-mode="light"] body.LexFIN-ui .messages-container { color: #0d0d0d; }
+        html[data-mode="light"] body.LexFIN-ui .message-row { color: #0d0d0d; }
+        html[data-mode="light"] body.LexFIN-ui .chat-input-area { background: #ffffff; }
+        html[data-mode="light"] body.LexFIN-ui .chat-input-box {
+            background: #ffffff; border-color: #d5d5d5;
+        }
+        html[data-mode="light"] body.LexFIN-ui .chat-input-box textarea { color: #0d0d0d; }
+        html[data-mode="light"] body.LexFIN-ui .sidebar-header { border-bottom-color: #e5e7eb; }
+        html[data-mode="light"] body.LexFIN-ui .btn-new-chat { color: #111827; }
+        html[data-mode="light"] body.LexFIN-ui .btn-new-chat:hover { background: #eef2f7; }
+        html[data-mode="light"] body.LexFIN-ui .history-item { color: #4b5563; }
+        html[data-mode="light"] body.LexFIN-ui .folder-item { color: #374151; }
+        html[data-mode="light"] body.LexFIN-ui .folder-item:hover { background: #eef2f7; color: #111827; }
+        html[data-mode="light"] body.LexFIN-ui .folder-item.active { background: #e8edf5; }
+        html[data-mode="light"] body.LexFIN-ui .sidebar-footer { border-top-color: #e5e7eb; }
+        html[data-mode="light"] body.LexFIN-ui .LexFIN-sidebar-mode-btn { color: #6b7280; border-bottom-color: #e5e7eb; }
+        html[data-mode="light"] body.LexFIN-ui .LexFIN-sidebar-mode-btn:hover { background: #eef2f7; color: #374151; }
+        html[data-mode="light"] body.LexFIN-ui .LexFIN-user-name { color: #111827; }
+        html[data-mode="light"] body.LexFIN-ui .LexFIN-brand-name-sm { color: #111827; }
     </style>
 </head>
-<body>
+<body class="LexFIN-ui">
+
     <!-- ═══ SIDEBAR OVERLAY (mobile) ═════════════════════════ -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:55;"></div>
+
+    <!-- ═══ PROJECT CONTEXT MENU ══════════════════════════════ -->
+    <div class="project-context-menu" id="projectContextMenu" data-project-id="">
+        <button class="project-context-menu-item" onclick="startRenameFromMenu()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Renommer
+        </button>
+        <button class="project-context-menu-item danger" onclick="deleteFromMenu()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Supprimer
+        </button>
+    </div>
 
     <div class="app-layout">
-        <!-- ═══ SIDEBAR — History Panel ═══════════════════════ -->
+        <!-- ═══ SIDEBAR ══════════════════════════════════════ -->
         <aside class="sidebar open" id="sidebar">
-            <!-- Sidebar Header -->
+            <!-- Header : logo + close -->
             <div class="sidebar-header">
-                <button class="btn-new-chat" onclick="newConversation()">
-                    <i class="fas fa-plus" style="font-size:13px"></i>
-                    <span>Nouvelle analyse</span>
-                </button>
-                <button class="btn-sidebar-close" onclick="toggleSidebar()" title="Fermer">
-                    <i class="fas fa-times" style="font-size:14px"></i>
+                <div class="sidebar-header-top">
+                    <div class="sidebar-brand">
+                        <svg class="sidebar-brand-logo" width="26" height="26" viewBox="0 0 56 56" fill="none">
+                            <rect width="56" height="56" rx="14" fill="#0f172a"/>
+                            <polygon points="28,8 48,46 8,46" fill="#dc2626"/>
+                            <line x1="28" y1="32" x2="28" y2="46" stroke="#0f172a" stroke-width="5"/>
+                        </svg>
+                        LexFIN <span style="font-size:0.6rem;font-weight:400;opacity:0.5;letter-spacing:0.04em;">SRMT</span>
+                    </div>
+                    <div class="sidebar-header-actions">
+                        <button class="sidebar-icon-btn" onclick="newConversation()" title="Nouveau projet">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                        </button>
+                        <button class="sidebar-icon-btn" onclick="toggleSidebar()" title="Fermer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Search -->
+                <div class="sidebar-search">
+                    <svg class="sidebar-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" id="projectSearch" placeholder="Rechercher..." oninput="filterProjects(this.value)" autocomplete="off"/>
+                </div>
+                <!-- New project button -->
+                <button class="btn-new-project" onclick="newConversation()">
+                    <span class="btn-new-project-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </span>
+                    Nouveau projet
                 </button>
             </div>
-
-            <!-- Sidebar Body — History List -->
             <div class="sidebar-body" id="sidebarBody">
-                <!-- Dynamically populated by JS -->
                 <div class="history-empty" id="historyEmpty">
-                    <i class="fas fa-clock-rotate-left"></i>
-                    <p style="font-size:0.82rem; font-weight:500;">Aucun historique</p>
-                    <p style="font-size:0.72rem; margin-top:4px;">Vos analyses apparaîtront ici</p>
+                    <i class="fas fa-folder-open"></i>
+                    <p style="font-size:0.82rem;font-weight:500;margin-bottom:2px;">Aucun projet</p>
+                    <p style="font-size:0.72rem;">Commencez une conversation pour créer votre premier projet</p>
                 </div>
             </div>
-
-            <!-- Sidebar Footer -->
             <div class="sidebar-footer">
-                <button class="sidebar-footer-btn" onclick="clearAllHistory()">
-                    <i class="fas fa-trash-can"></i>
-                    <span>Effacer l'historique</span>
+                <button class="LexFIN-sidebar-mode-btn" onclick="toggleMode()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" opacity="0.3"/></svg>
+                    Mode sombre
                 </button>
-                <button class="sidebar-footer-btn" onclick="exportHistory()">
-                    <i class="fas fa-download"></i>
-                    <span>Exporter l'historique</span>
-                </button>
+                <div class="LexFIN-user-row">
+                    <div class="LexFIN-user-avatar">B</div>
+                    <div class="LexFIN-user-info">
+                        <div class="LexFIN-user-name">Baye Gorgoumack Niang</div>
+                        <div class="LexFIN-user-email">bayegorgui.niang@accel-tech.com</div>
+                    </div>
+                </div>
             </div>
         </aside>
 
-        <!-- ═══ MAIN CONTENT AREA ════════════════════════════ -->
-        <div class="app-main">
-            <!-- ═══ HEADER ═══════════════════════════════════ -->
-            <header class="app-header">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                    <div class="flex items-center justify-between">
-                        <!-- Left: Toggle + Logo -->
-                        <div class="flex items-center gap-3">
-                            <button class="btn-sidebar-toggle" onclick="toggleSidebar()" title="Historique">
-                                <i class="fas fa-bars" style="font-size:16px"></i>
+        <!-- ═══ MAIN — ChatGPT Style ═════════════════════════ -->
+        <div class="app-main" id="appMain">
+
+            <!-- ── Chat Header ── -->
+            <div class="chat-gpt-header">
+                <div class="chat-gpt-header-left">
+                    <button class="chat-gpt-menu-btn" onclick="toggleSidebar()" title="Menu">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                    </button>
+                    <button class="model-badge-btn" id="modelSelectorBtn" onclick="toggleModelDropdown(event)" title="Changer de modèle">
+                        <span id="selectedModelName">Llama 3.1 8B</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <!-- Model dropdown -->
+                    <div id="modelDropdown" class="model-dropdown">
+                        <div class="model-group-label">⚡ Rapides</div>
+                        <div class="model-option selected" data-model="meta/llama-3.1-8b-instruct">
+                            <div class="model-option-info"><div class="model-option-name">Llama 3.1 8B</div><div class="model-option-desc">Équilibré • Réponses rapides</div></div>
+                            <span class="model-speed-badge fast">3-5s</span>
+                        </div>
+                        <div class="model-option" data-model="nvidia/llama-3.1-nemotron-nano-8b-v1">
+                            <div class="model-option-info"><div class="model-option-name">Nemotron Nano 8B</div><div class="model-option-desc">NVIDIA optimisé • Efficace</div></div>
+                            <span class="model-speed-badge fast">3-6s</span>
+                        </div>
+                        <div class="model-option" data-model="meta/llama-3.2-3b-instruct">
+                            <div class="model-option-info"><div class="model-option-name">Llama 3.2 3B</div><div class="model-option-desc">Ultra-léger • Le plus rapide</div></div>
+                            <span class="model-speed-badge fast">1-3s</span>
+                        </div>
+                        <div class="model-group-label">📊 Analyse & Codage</div>
+                        <div class="model-option" data-model="qwen/qwen2.5-coder-32b-instruct">
+                            <div class="model-option-info"><div class="model-option-name">Qwen Coder 32B</div><div class="model-option-desc">Expert SQL/Python</div></div>
+                            <span class="model-speed-badge medium">8-15s</span>
+                        </div>
+                        <div class="model-option" data-model="mistralai/mixtral-8x7b-instruct-v0.1">
+                            <div class="model-option-info"><div class="model-option-name">Mixtral 8x7B</div><div class="model-option-desc">Mixture of Experts • Polyvalent</div></div>
+                            <span class="model-speed-badge medium">8-15s</span>
+                        </div>
+                        <div class="model-option" data-model="google/gemma-3-12b-it">
+                            <div class="model-option-info"><div class="model-option-name">Gemma 3 12B</div><div class="model-option-desc">Google • Analyse précise</div></div>
+                            <span class="model-speed-badge medium">8-14s</span>
+                        </div>
+                        <div class="model-group-label">🚀 Haute Performance</div>
+                        <div class="model-option" data-model="meta/llama-3.3-70b-instruct">
+                            <div class="model-option-info"><div class="model-option-name">Llama 3.3 70B</div><div class="model-option-desc">Très précis • Analyses détaillées</div></div>
+                            <span class="model-speed-badge medium">15-25s</span>
+                        </div>
+                        <div class="model-option" data-model="nvidia/llama-3.3-nemotron-super-49b-v1">
+                            <div class="model-option-info"><div class="model-option-name">Nemotron Super 49B</div><div class="model-option-desc">NVIDIA • Raisonnement avancé</div></div>
+                            <span class="model-speed-badge medium">15-25s</span>
+                        </div>
+                        <div class="model-option" data-model="meta/llama-4-maverick-17b-128e-instruct">
+                            <div class="model-option-info"><div class="model-option-name">Llama 4 Maverick</div><div class="model-option-desc">2025 • MoE 128 experts</div></div>
+                            <span class="model-speed-badge medium">12-20s</span>
+                        </div>
+                        <div class="model-option" data-model="mistralai/mixtral-8x22b-instruct-v0.1">
+                            <div class="model-option-info"><div class="model-option-name">Mixtral 8x22B</div><div class="model-option-desc">MoE puissant • Haute qualité</div></div>
+                            <span class="model-speed-badge slow">20-35s</span>
+                        </div>
+                        <div class="model-option" data-model="mistralai/mistral-large-3-675b-instruct-2512">
+                            <div class="model-option-info"><div class="model-option-name">Mistral Large 3</div><div class="model-option-desc">Meilleur Mistral • 675B</div></div>
+                            <span class="model-speed-badge slow">25-40s</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-gpt-header-right">
+                    <div class="LexFIN-user-avatar" style="width:30px;height:30px;font-size:0.78rem;cursor:pointer;" title="Baye Gorgoumack Niang">B</div>
+                </div>
+            </div>
+
+            <!-- ══ LexFin Legal Expert Panel ══════════════════════════ -->
+            <div class="lexfin-panel" id="lexfinPanel">
+                <!-- LexFin Welcome -->
+                <div class="lf-welcome" id="lfWelcome">
+                    <div class="lf-welcome-badge"><i class="ph-bold ph-scales"></i> Expert juridique</div>
+                    <div class="lf-welcome-icon">⚖️</div>
+                    <div class="lf-welcome-title">LexFin Assistant</div>
+                    <div class="lf-welcome-sub">Expert en droit fiscal et douanier sénégalais<br>CGI · Code des Douanes · Loi de finances 2026</div>
+                    <div class="lf-suggestions">
+                        <button class="lf-card" onclick="lfQuery('Quel est le taux de la TVA au Sénégal et sur quelles opérations s\'applique-t-il ?')">
+                            <i class="ph-bold ph-percent"></i>
+                            <span>Quel est le taux de la TVA ?</span>
+                        </button>
+                        <button class="lf-card" onclick="lfQuery('Quelles sont les principales nouveautés fiscales de la loi de finances 2026 au Sénégal ?')">
+                            <i class="ph-bold ph-newspaper"></i>
+                            <span>Nouveautés loi de finances 2026</span>
+                        </button>
+                        <button class="lf-card" onclick="lfQuery('Comment sont calculés les droits de douane applicables à l\'importation au Sénégal ?')">
+                            <i class="ph-bold ph-package"></i>
+                            <span>Droits de douane applicables</span>
+                        </button>
+                        <button class="lf-card" onclick="lfQuery('Comment calculer l\'impôt sur les sociétés (IS) au Sénégal ? Taux et base imposable.')">
+                            <i class="ph-bold ph-calculator"></i>
+                            <span>Calcul impôt sur les sociétés</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- LexFin Messages -->
+                <div class="lf-messages" id="lfMessages"></div>
+            </div>
+
+            <!-- ── Chat Area (Application BI SRMT) ── -->
+            <div class="chat-area" id="chatArea">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-logo">
+                        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="56" height="56" rx="14" fill="#0f172a"/>
+                            <polygon points="28,8 48,46 8,46" fill="#dc2626"/>
+                            <polygon points="28,15 44,45 12,45" fill="#7f1d1d" opacity="0.45"/>
+                            <line x1="28" y1="32" x2="28" y2="46" stroke="#0f172a" stroke-width="5"/>
+                        </svg>
+                    </div>
+                    <div class="welcome-title">LexFIN</div>
+                    <div class="welcome-subtitle">Assistant BI · Stratégie des Recettes à Moyen Terme (SRMT)</div>
+                    <div class="welcome-suggestions">
+                        <button id="btnTop" class="welcome-card" onclick="setQuery('Quels sont les top 10 contribuables par montant recouvré ?');analyzeQuery()">📊 Quels sont les top 10 contribuables par montant recouvré ?</button>
+                        <button id="btnEvolution" class="welcome-card" onclick="setQuery('Évolution mensuelle des recouvrements cette année');analyzeQuery()">📈 Évolution mensuelle des recouvrements cette année</button>
+                        <button id="btnRegional" class="welcome-card" onclick="setQuery('Performance par direction régionale ce mois');analyzeQuery()">🗺️ Performance par direction régionale ce mois</button>
+                        <button id="btnComparaison" class="welcome-card" onclick="setQuery('Écarts entre montants déclarés et recouvrés');analyzeQuery()">⚖️ Écarts entre montants déclarés et recouvrés</button>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div class="messages-container" id="messagesContainer"></div>
+
+                <!-- ══ App Dashboard Panel ══════════════════════════════ -->
+                <div class="app-dashboard-panel" id="appDashboardPanel">
+
+                    <!-- KPI row -->
+                    <div>
+                        <div class="app-section-title">Indicateurs clés — SRMT</div>
+                        <div class="kpi-row">
+                            <div class="kpi-tile" style="--kpi-color:#10b981" onclick="quickQuery('Quel est le montant total des recettes déclarées cette année ?')">
+                                <div class="kpi-tile-accent"></div>
+                                <div class="kpi-tile-icon"><i class="ph-bold ph-file-text"></i></div>
+                                <div class="kpi-tile-label">Recettes Déclarées</div>
+                                <div class="kpi-tile-value" id="kpiDeclared">—</div>
+                                <div class="kpi-tile-sub">Cliquez pour analyser</div>
+                            </div>
+                            <div class="kpi-tile" style="--kpi-color:#3b82f6" onclick="quickQuery('Quel est le montant total des recettes recouvrées cette année ?')">
+                                <div class="kpi-tile-accent"></div>
+                                <div class="kpi-tile-icon"><i class="ph-bold ph-bank"></i></div>
+                                <div class="kpi-tile-label">Recettes Recouvrées</div>
+                                <div class="kpi-tile-value" id="kpiRecovered">—</div>
+                                <div class="kpi-tile-sub">Cliquez pour analyser</div>
+                            </div>
+                            <div class="kpi-tile" style="--kpi-color:#8b5cf6" onclick="quickQuery('Quel est le taux de recouvrement global cette année ?')">
+                                <div class="kpi-tile-accent"></div>
+                                <div class="kpi-tile-icon"><i class="ph-bold ph-chart-pie"></i></div>
+                                <div class="kpi-tile-label">Taux Recouvrement</div>
+                                <div class="kpi-tile-value" id="kpiRate">—</div>
+                                <div class="kpi-tile-sub">Cliquez pour analyser</div>
+                            </div>
+                            <div class="kpi-tile" style="--kpi-color:#f59e0b" onclick="quickQuery('Quel est l\'écart entre les montants déclarés et recouvrés ?')">
+                                <div class="kpi-tile-accent"></div>
+                                <div class="kpi-tile-icon"><i class="ph-bold ph-arrows-left-right"></i></div>
+                                <div class="kpi-tile-label">Écart D/R</div>
+                                <div class="kpi-tile-value" id="kpiGap">—</div>
+                                <div class="kpi-tile-sub">Cliquez pour analyser</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick actions -->
+                    <div>
+                        <div class="app-section-title">Actions rapides</div>
+                        <div class="qa-grid">
+                            <button class="qa-btn" style="--qa-color:#10b981" onclick="quickQuery('Génère un rapport mensuel complet des recouvrements avec tableaux et analyses')">
+                                <div class="qa-icon"><i class="ph-bold ph-newspaper"></i></div>
+                                <div><div class="qa-label">Rapport mensuel</div><div class="qa-desc">Synthèse complète</div></div>
                             </button>
-                            <div class="header-logo-icon">
-                                <i class="fas fa-chart-line text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h1 class="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                                    SRMT Intelligence
-                                    <span class="text-base">🇸🇳</span>
-                                </h1>
-                                <p class="text-xs text-gray-400 font-medium hidden sm:block">Plateforme d'Analyse Fiscale • République du Sénégal</p>
-                            </div>
-                        </div>
-
-                        <!-- Right: Badges + Profile -->
-                        <div class="flex items-center gap-2 sm:gap-3">
-                            <span class="header-badge bg-white bg-opacity-5 border border-white border-opacity-10 text-gray-300 hidden sm:inline-flex">
-                                <i class="fas fa-database mr-2 text-blue-400" style="font-size:11px"></i>
-                                {{ "{:,}".format(total_records) }} enr.
-                            </span>
-                            {% if config.PRODUCTION_MODE %}
-                            <span class="header-badge text-green-300" style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.2)">
-                                <i class="fas fa-shield-alt mr-1" style="font-size:10px"></i>PROD
-                            </span>
-                            {% else %}
-                            <span class="header-badge text-amber-300" style="background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.2)">
-                                <i class="fas fa-code mr-1" style="font-size:10px"></i>DEV
-                            </span>
-                            {% endif %}
-
-                            <!-- Mode Toggle -->
-                            <button class="mode-toggle-btn" id="modeToggleBtn" onclick="toggleMode()" title="Mode clair / sombre">
-                                <span class="mode-icon-dark"><i class="fas fa-moon"></i></span>
-                                <span class="mode-icon-light"><i class="fas fa-sun" style="color:#F59E0B"></i></span>
+                            <button class="qa-btn" style="--qa-color:#3b82f6" onclick="quickQuery('Génère le top 10 des contribuables par montant recouvré avec tableau détaillé')">
+                                <div class="qa-icon"><i class="ph-bold ph-trophy"></i></div>
+                                <div><div class="qa-label">Top contribuables</div><div class="qa-desc">Classement recouvrement</div></div>
                             </button>
-
-                            <!-- Profile Dropdown -->
-                            <div class="profile-container" id="profileContainer">
-                                <button class="profile-btn" onclick="toggleProfileDropdown()" title="Profil">
-                                    <span>BN</span>
-                                </button>
-                                <div class="profile-dropdown" id="profileDropdown">
-                                    <div class="profile-dropdown-header">
-                                        <div class="profile-dropdown-avatar">BN</div>
-                                        <div class="profile-dropdown-info">
-                                            <div class="profile-dropdown-name">Baye Niang</div>
-                                            <div class="profile-dropdown-role">Administrateur SRMT</div>
-                                        </div>
-                                    </div>
-                                    <div class="profile-dropdown-menu">
-                                        <button class="profile-menu-item" onclick="showToast('Paramètres à venir', 'info')">
-                                            <i class="fas fa-gear"></i>
-                                            <span>Paramètres</span>
-                                        </button>
-                                        <button class="profile-menu-item" onclick="openThemeModal()">
-                                            <i class="fas fa-palette"></i>
-                                            <span>Apparence</span>
-                                        </button>
-                                        <button class="profile-menu-item" onclick="exportHistory()">
-                                            <i class="fas fa-download"></i>
-                                            <span>Exporter les données</span>
-                                        </button>
-                                        <button class="profile-menu-item" onclick="showToast('Raccourcis clavier : Ctrl+K', 'info')">
-                                            <i class="fas fa-keyboard"></i>
-                                            <span>Raccourcis clavier</span>
-                                        </button>
-                                        <div class="profile-menu-divider"></div>
-                                        <button class="profile-menu-item danger" onclick="clearAllHistory()">
-                                            <i class="fas fa-trash-can"></i>
-                                            <span>Effacer l'historique</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <button class="qa-btn" style="--qa-color:#8b5cf6" onclick="quickQuery('Analyse les écarts entre déclarations et recouvrements par secteur')">
+                                <div class="qa-icon"><i class="ph-bold ph-git-diff"></i></div>
+                                <div><div class="qa-label">Analyse écarts</div><div class="qa-desc">D vs R par secteur</div></div>
+                            </button>
+                            <button class="qa-btn" style="--qa-color:#f59e0b" onclick="quickQuery('Montre l\'évolution mensuelle des recettes sur les 12 derniers mois')">
+                                <div class="qa-icon"><i class="ph-bold ph-trend-up"></i></div>
+                                <div><div class="qa-label">Évolution mensuelle</div><div class="qa-desc">Tendances 12 mois</div></div>
+                            </button>
+                            <button class="qa-btn" style="--qa-color:#ef4444" onclick="quickQuery('Quels contribuables ont des retards de paiement ou dossiers critiques ?')">
+                                <div class="qa-icon"><i class="ph-bold ph-warning"></i></div>
+                                <div><div class="qa-label">Alertes critiques</div><div class="qa-desc">Retards et risques</div></div>
+                            </button>
+                            <button class="qa-btn" style="--qa-color:#06b6d4" onclick="quickQuery('Donne-moi une prévision des recettes pour le prochain trimestre')">
+                                <div class="qa-icon"><i class="ph-bold ph-magic-wand"></i></div>
+                                <div><div class="qa-label">Prévisions</div><div class="qa-desc">Prochain trimestre</div></div>
+                            </button>
                         </div>
                     </div>
+
+                    <div style="font-size:0.7rem;color:#9ca3af;text-align:center;padding-bottom:8px">
+                        <i class="ph ph-info" style="margin-right:4px;"></i>Cliquez sur un indicateur ou une action pour interroger LexFIN · Les résultats apparaissent dans le chat
+                    </div>
                 </div>
-            </header>
 
-    <!-- ═══ MAIN CONTENT ═════════════════════════════════════ -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                <!-- Hidden elements for JS compatibility -->
+                <div id="loadingState" style="display:none;"></div>
+                <div id="resultsArea" style="display:none;">
+                    <div id="aiResponse"></div>
+                    <div id="dataResults"></div>
+                    <span id="processingTime"></span>
+                    <span id="ragMatches"></span>
+                    <pre id="generatedCode"></pre>
+                    <div id="codeSection"></div>
+                </div>
+            </div>
 
-        <!-- ── Tableau de pilotage ministériel ───────────────── -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div class="stat-card blue animate-fade-in-delay-1">
-                <div class="flex items-center gap-4">
-                    <div class="stat-icon blue"><i class="fas fa-bullseye"></i></div>
-                    <div>
-                        <p class="stat-label">Objectif stratégique</p>
-                        <p class="stat-value" style="font-size:1rem; line-height:1.35">Accélérer le recouvrement des principaux gisements fiscaux</p>
+            <!-- ── Input Area ── -->
+            <div class="chat-input-area">
+                <div class="chat-input-inner">
+                    <div class="chat-input-box" id="chatInputBox">
+
+                        <!-- Single mode-switch toggle button -->
+                        <button class="mode-switch-btn" id="modeSwitchBtn"
+                            onclick="toggleViewMode()" title="Basculer entre LexFIN et App">
+                            <i class="ph-bold ph-chat-circle-text" id="modeSwitchIcon"></i>
+                            <span id="modeSwitchLabel">LF</span>
+                        </button>
+
+                        <textarea
+                            id="queryInput"
+                            rows="1"
+                            placeholder="Envoyer un message à LexFIN…"
+                            autocomplete="off"
+                            oninput="autoResizeTextarea(this)"
+                            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();analyzeQuery();}"
+                        ></textarea>
+
+                        <button id="analyzeBtn" class="chat-send-btn" title="Envoyer" onclick="analyzeQuery()">
+                            <i class="ph-bold ph-paper-plane-right" style="font-size:1rem;"></i>
+                        </button>
+                    </div>
+                    <div class="chat-input-footer">
+                        LexFIN peut produire des informations incorrectes. Vérifiez les réponses importantes. · Projet SRMT — Accel Tech
                     </div>
                 </div>
             </div>
-            <div class="stat-card green animate-fade-in-delay-2">
-                <div class="flex items-center gap-4">
-                    <div class="stat-icon green"><i class="fas fa-scale-balanced"></i></div>
-                    <div>
-                        <p class="stat-label">Décision à préparer</p>
-                        <p class="stat-value" style="font-size:1rem; line-height:1.35">Arbitrer les actions de relance par secteur et par direction</p>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card purple animate-fade-in-delay-3">
-                <div class="flex items-center gap-4">
-                    <div class="stat-icon purple"><i class="fas fa-triangle-exclamation"></i></div>
-                    <div>
-                        <p class="stat-label">Point de vigilance</p>
-                        <p class="stat-value" style="font-size:1rem; line-height:1.35">Suivre les écarts élevés entre montants déclarés et recouvrés</p>
-                    </div>
-                </div>
-            </div>
-            <div class="stat-card gold animate-fade-in-delay-4">
-                <div class="flex items-center gap-4">
-                    <div class="stat-icon gold"><i class="fas fa-list-check"></i></div>
-                    <div>
-                        <p class="stat-label">Action immédiate</p>
-                        <p class="stat-value" style="font-size:1rem; line-height:1.35">Prioriser les 10 dossiers à plus fort impact budgétaire</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Search Section ────────────────────────────── -->
-        <div class="search-container mb-6 sm:mb-8 animate-fade-in-delay-2">
-            <!-- Title row -->
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple))">
-                    <i class="fas fa-robot text-white text-lg"></i>
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold text-white">Assistant IA Fiscal</h2>
-                    <p class="text-sm text-gray-400">Posez vos questions en français sur les données SRMT</p>
-                </div>
-            </div>
-
-            <!-- Input row -->
-            <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                <div class="relative flex-1">
-                    <i class="fas fa-search search-icon"></i>
-                    <input
-                        type="text"
-                        id="queryInput"
-                        class="search-input"
-                        placeholder="Ex: Quels sont les 10 plus gros contribuables par montant recouvré ?"
-                        autocomplete="off"
-                    >
-                </div>
-                <button id="analyzeBtn" class="btn-analyze">
-                    <i class="fas fa-bolt"></i>
-                    <span>Analyser</span>
-                </button>
-            </div>
-
-            <!-- Quick Actions -->
-            <div>
-                <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-3">
-                    <i class="fas fa-bolt mr-1"></i>Analyses rapides
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                    <button id="btnTop" class="quick-btn">
-                        <i class="fas fa-trophy text-yellow-400"></i>
-                        <span>Top contribuables</span>
-                    </button>
-                    <button id="btnEvolution" class="quick-btn">
-                        <i class="fas fa-chart-line text-green-400"></i>
-                        <span>Évolution temporelle</span>
-                    </button>
-                    <button id="btnRegional" class="quick-btn">
-                        <i class="fas fa-map-marked-alt text-blue-400"></i>
-                        <span>Analyse régionale</span>
-                    </button>
-                    <button id="btnComparaison" class="quick-btn">
-                        <i class="fas fa-balance-scale text-purple-400"></i>
-                        <span>Écarts & Anomalies</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Loading State ─────────────────────────────── -->
-        <div id="loadingState" class="hidden">
-            <div class="loading-container">
-                <div class="loading-spinner"></div>
-                <p class="text-white font-semibold text-lg mb-1">Analyse en cours...</p>
-                <p class="text-gray-400 text-sm" style="animation: pulse-soft 2s infinite">L'IA traite votre demande, veuillez patienter</p>
-                <div class="loading-bar">
-                    <div class="loading-bar-fill"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══ RESULTS AREA ═════════════════════════════════ -->
-        <div id="resultsArea" class="hidden">
-            <!-- Results Header -->
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-1 h-8 rounded-full" style="background: linear-gradient(180deg, var(--accent-blue), var(--accent-purple))"></div>
-                <h3 class="text-xl font-bold text-white">Résultats d'Analyse</h3>
-            </div>
-
-            <!-- AI Analysis Response -->
-            <div class="result-section" style="border-color: rgba(99, 102, 241, 0.15)">
-                <div class="section-header">
-                    <div class="section-icon" style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(59,130,246,0.1))">
-                        <i class="fas fa-brain text-indigo-400"></i>
-                    </div>
-                    <div>
-                        <h4 class="section-title">Analyse Intelligente</h4>
-                        <p class="text-xs text-gray-500 mt-0.5">Synthèse décisionnelle générée par l'IA</p>
-                    </div>
-                </div>
-                <div id="aiResponse" class="text-gray-300 leading-relaxed"></div>
-            </div>
-
-            <!-- Data Table -->
-            <div class="result-section" style="border-color: rgba(16, 185, 129, 0.15)">
-                <div class="section-header">
-                    <div class="section-icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.1))">
-                        <i class="fas fa-table text-emerald-400"></i>
-                    </div>
-                    <div>
-                        <h4 class="section-title">Données Résultantes</h4>
-                        <p class="text-xs text-gray-500 mt-0.5">Tableau détaillé des résultats</p>
-                    </div>
-                </div>
-                <div id="dataResults" class="result-scroll"></div>
-            </div>
-
-            <!-- Performance Info -->
-            <div class="result-section" style="padding: 16px 24px; margin-bottom: 12px;">
-                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
-                    <div class="flex items-center gap-6 text-gray-400">
-                        <span class="flex items-center gap-2">
-                            <i class="fas fa-stopwatch text-blue-400" style="font-size:13px"></i>
-                            Traitement: <span id="processingTime" class="text-white font-medium">-</span>s
-                        </span>
-                        <span class="flex items-center gap-2">
-                            <i class="fas fa-search-plus text-purple-400" style="font-size:13px"></i>
-                            RAG: <span id="ragMatches" class="text-white font-medium">-</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Code Section (Collapsible) -->
-            <div class="result-section" style="padding: 0; border-color: rgba(255,255,255,0.04)">
-                <button id="toggleCodeBtn" class="w-full text-left px-6 py-4 flex items-center justify-between hover:bg-white hover:bg-opacity-5 transition-all" style="border-radius: var(--radius-xl)">
-                    <div class="flex items-center gap-3">
-                        <div class="section-icon" style="background: rgba(255,255,255,0.06); width:36px; height:36px">
-                            <i class="fas fa-code text-gray-400" style="font-size:15px"></i>
-                        </div>
-                        <span class="text-sm font-medium text-gray-300">Code Python Généré</span>
-                    </div>
-                    <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform" id="codeChevron"></i>
-                </button>
-                <div id="codeSection" class="hidden px-6 pb-6">
-                    <div class="code-block">
-                        <div class="code-header">
-                            <div class="code-dots">
-                                <span style="background:#FF5F57"></span>
-                                <span style="background:#FEBC2E"></span>
-                                <span style="background:#28C840"></span>
-                            </div>
-                            <span class="text-xs text-gray-500 font-medium">Python · Polars</span>
-                        </div>
-                        <pre id="generatedCode" class="code-body"></pre>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- ═══ FOOTER ═══════════════════════════════════════════ -->
-    <footer class="app-footer">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div class="flex items-center gap-3 text-gray-500 text-xs">
-                    <span class="font-medium text-gray-400">© 2025 SRMT Intelligence</span>
-                    <span class="hidden sm:inline text-gray-600">•</span>
-                    <span class="hidden sm:inline flex items-center gap-1">
-                        <i class="fas fa-lock text-green-500" style="font-size:10px"></i>
-                        Système sécurisé avec nvidia
-                    </span>
-                </div>
-                <div class="flex items-center gap-3 text-xs text-gray-600">
-                    <span>v3.0</span>
-                    <span>•</span>
-                    <span>Powered by ACCEL-TECH</span>
-                </div>
-            </div>
-        </div>
-    </footer>
 
         </div><!-- /.app-main -->
     </div><!-- /.app-layout -->
@@ -1849,6 +3092,7 @@
         console.log('🚀 SRMT Intelligence v3.0 — Interface loaded');
 
         /* ── Utility Functions ────────────────────────── */
+
 
         function setQuery(query) {
             document.getElementById('queryInput').value = query;
@@ -1881,50 +3125,237 @@
 
         /* ── API Call ─────────────────────────────────── */
 
+        /* ── Chat Helpers ─────────────────────────────── */
+
+        let _loadingCount = 0;
+
+        function showChatMode() {
+            const welcome = document.getElementById('welcomeScreen');
+            const msgs = document.getElementById('messagesContainer');
+            if (welcome) welcome.style.display = 'none';
+            if (msgs) msgs.classList.add('active');
+        }
+
+        function appendChatMessage(role, content, isHtml = false) {
+            const msgs = document.getElementById('messagesContainer');
+            const row = document.createElement('div');
+            row.className = 'message-row ' + role;
+            const logoSvg = '<svg width="16" height="16" viewBox="0 0 56 56" fill="none"><rect width="56" height="56" rx="14" fill="#0f172a"/><polygon points="28,8 48,46 8,46" fill="#dc2626"/><line x1="28" y1="32" x2="28" y2="46" stroke="#0f172a" stroke-width="5"/></svg>';
+            if (role === 'user') {
+                row.innerHTML = '<div class="user-bubble">' + escapeHtml(content) + '</div>';
+            } else {
+                row.innerHTML = '<div class="ai-avatar-msg">' + logoSvg + '</div><div class="ai-message-content">' + (isHtml ? content : escapeHtml(content)) + '</div>';
+            }
+            msgs.appendChild(row);
+            scrollChatToBottom();
+            return row;
+        }
+
+        function appendLoadingBubble() {
+            const id = 'lb-' + (++_loadingCount);
+            const msgs = document.getElementById('messagesContainer');
+            const row = document.createElement('div');
+            row.id = id;
+            row.className = 'message-row assistant';
+            const logoSvg = '<svg width="16" height="16" viewBox="0 0 56 56" fill="none"><rect width="56" height="56" rx="14" fill="#0f172a"/><polygon points="28,8 48,46 8,46" fill="#dc2626"/><line x1="28" y1="32" x2="28" y2="46" stroke="#0f172a" stroke-width="5"/></svg>';
+            row.innerHTML = '<div class="ai-avatar-msg">' + logoSvg + '</div><div class="ai-message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+            msgs.appendChild(row);
+            scrollChatToBottom();
+            return id;
+        }
+
+        function removeLoadingBubble(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function scrollChatToBottom() {
+            const ca = document.getElementById('chatArea');
+            if (ca) ca.scrollTop = ca.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+        }
+
+        function buildChatResponseHTML(result) {
+            let html = '';
+            if (result.response && typeof result.response === 'object') {
+                const r = result.response;
+                if (r.titre) html += '<h4 style="font-weight:700;font-size:1rem;margin-bottom:8px">' + escapeHtml(r.titre) + '</h4>';
+                if (r.analyse_resume) {
+                    const txt = r.analyse_resume
+                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n\n/g, '</p><p style="margin-top:8px">')
+                        .replace(/\n/g, '<br>');
+                    html += '<p>' + txt + '</p>';
+                }
+                if (r.alertes_decisionnelles && r.alertes_decisionnelles.length) {
+                    html += '<ul style="padding-left:18px;margin:8px 0">';
+                    r.alertes_decisionnelles.forEach(function(a) {
+                        html += '<li style="margin-bottom:6px"><strong>' + escapeHtml(a.titre||'') + '</strong>' + (a.message ? ': ' + escapeHtml(a.message) : '') + '</li>';
+                    });
+                    html += '</ul>';
+                }
+                if (r.recommandations && r.recommandations.length) {
+                    html += '<div style="margin-top:12px"><strong>Recommandations :</strong><ul style="padding-left:18px;margin:6px 0">';
+                    r.recommandations.forEach(function(rec) {
+                        html += '<li style="margin-bottom:4px">' + escapeHtml(rec.action || rec) + '</li>';
+                    });
+                    html += '</ul></div>';
+                }
+            } else if (result.response) {
+                if (window.marked) {
+                    html = marked.parse(String(result.response));
+                } else {
+                    html = convertMarkdownToHTML(String(result.response));
+                }
+            }
+            // Data table
+            let dataToDisplay = null;
+            if (result.response && result.response.donnees_detaillees) dataToDisplay = result.response.donnees_detaillees;
+            else if (result.execution_result) dataToDisplay = result.execution_result;
+            if (dataToDisplay) {
+                const arr = Array.isArray(dataToDisplay) ? dataToDisplay : [dataToDisplay];
+                if (arr.length > 0) html += '<div style="margin-top:14px;overflow-x:auto;border-radius:8px;border:1px solid #e5e5e5">' + formatTableData(arr) + '</div>';
+            }
+            if (result.processing_time) {
+                html += '<p style="color:#8e8ea0;font-size:0.75rem;margin-top:14px">⏱️ Traitement: ' + result.processing_time.toFixed(2) + 's</p>';
+            }
+            return html || '<p style="color:#8e8ea0">Aucune réponse générée.</p>';
+        }
+
+        /* ── Main Analyze ─────────────────────────────── */
+
         async function analyzeQuery() {
-            const query = document.getElementById('queryInput').value.trim();
+            const textarea = document.getElementById('queryInput');
+            const query = (textarea.value || '').trim();
             if (!query) { showToast('Veuillez saisir une question', 'error'); return; }
 
-            const loadingState = document.getElementById('loadingState');
-            const resultsArea = document.getElementById('resultsArea');
-            const analyzeBtn = document.getElementById('analyzeBtn');
+            const isLF = (_viewMode === 'lf');
 
-            loadingState.classList.remove('hidden');
-            resultsArea.classList.add('hidden');
+            if (isLF) {
+                /* ══ Mode LexFin — Expert juridique ══ */
+                showLFChatMode();
+                appendLFMessage('user', query);
+                textarea.value = '';
+                autoResizeTextarea(textarea);
+
+                const loadingId = appendLFLoadingBubble();
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>';
+
+                try {
+                    const selectedModel = localStorage.getItem('selectedModel') || 'meta/llama-3.1-8b-instruct';
+                    const response = await fetch('/api/lexfin', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ question: query, model: selectedModel })
+                    });
+                    const result = await response.json();
+                    removeLoadingBubble(loadingId);
+                    if (response.ok) {
+                        const md = result.response || '';
+                        appendLFMessage('assistant', marked ? marked.parse(md) : escapeHtml(md), true);
+                        showToast('Réponse LexFin générée', 'success');
+                    } else {
+                        appendLFMessage('assistant', '<p style="color:#ef4444">' + escapeHtml(result.response || result.error || 'Erreur') + '</p>', true);
+                        showToast('Erreur LexFin', 'error');
+                    }
+                } catch(err) {
+                    removeLoadingBubble(loadingId);
+                    appendLFMessage('assistant', '<p style="color:#ef4444">❌ ' + escapeHtml(err.message) + '</p>', true);
+                    showToast('Erreur de connexion', 'error');
+                } finally {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.innerHTML = '<i class="ph-bold ph-paper-plane-right" style="font-size:1rem;"></i>';
+                }
+                return;
+            }
+
+            /* ══ Mode Application BI SRMT ══ */
+            showChatMode();
+            // 🗂️ Projet : créer ou récupérer le projet courant
+            const _project = getOrCreateCurrentProject(query);
+            addMessageToProject(_project.id, 'user', query, null, null);
+            appendChatMessage('user', query);
+            textarea.value = '';
+            autoResizeTextarea(textarea);
+
+            const loadingId = appendLoadingBubble();
+            const analyzeBtn = document.getElementById('analyzeBtn');
             analyzeBtn.disabled = true;
-            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Analyse...</span>';
+            analyzeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="8"/></svg>';
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000);
+                const selectedModel = localStorage.getItem('selectedModel') || 'meta/llama-3.1-8b-instruct';
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ question: query })
+                    body: JSON.stringify({ question: query, model: selectedModel }),
+                    signal: controller.signal
                 });
-
+                clearTimeout(timeoutId);
                 const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    throw new Error(`Réponse non-JSON (${response.status}): ${text.substring(0, 100)}...`);
-                }
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    displayResults(result);
-                    showToast('Analyse terminée avec succès', 'success');
+                let result;
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
                 } else {
-                    displayError(result.error || 'Erreur lors de l\'analyse');
+                    throw new Error('Réponse non-JSON (' + response.status + ')');
+                }
+                removeLoadingBubble(loadingId);
+                if (response.ok) {
+                    const _aiHtml = buildChatResponseHTML(result);
+                    appendChatMessage('assistant', _aiHtml, true);
+                    const _resText = (result.response && typeof result.response === 'object')
+                        ? (result.response.analyse_resume || result.response.titre || JSON.stringify(result.response).substring(0, 500))
+                        : String(result.response || '').substring(0, 500);
+                    addMessageToProject(_project.id, 'assistant', _resText, _aiHtml, result.code || null);
+                    showToast('Analyse terminée', 'success');
+                } else {
+                    let errMsg = result.error || result.response || "Erreur lors de l'analyse";
+                    const errStr = String(errMsg);
+                    const modelName = document.getElementById('selectedModelName').textContent;
+
+                    // Modèle réellement absent du compte (UUID function not found)
+                    if (errStr.includes('Not found for account') || errStr.includes('not found for account')) {
+                        errMsg = `⚠️ Le modèle "${modelName}" nécessite un accès spécial sur ce compte NVIDIA NIM.\n\nVeuillez sélectionner un autre modèle.`;
+                        showToast('Modèle non autorisé — changez de modèle', 'error');
+                    }
+                    // Quota ou rate limit temporaire
+                    else if (response.status === 429 || errStr.includes('rate limit') || errStr.includes('quota')) {
+                        errMsg = `⏳ Limite de requêtes atteinte pour "${modelName}".\n\nAttendez quelques secondes et réessayez, ou changez de modèle.`;
+                        showToast('Limite atteinte — réessayez dans quelques secondes', 'error');
+                    }
+                    // Erreur serveur générique
+                    else {
+                        showToast("Erreur d'analyse — réessayez", 'error');
+                    }
+                    const _errHtml = '<p style="color:#ef4444; white-space:pre-line">' + escapeHtml(String(errMsg)) + '</p>';
+                    appendChatMessage('assistant', _errHtml, true);
+                    addMessageToProject(_project.id, 'assistant', String(errMsg).substring(0, 500), _errHtml, null);
                 }
             } catch (error) {
-                console.error('❌ Error:', error);
-                displayError('Erreur de connexion: ' + error.message);
+                removeLoadingBubble(loadingId);
+                const msg = error.name === 'AbortError'
+                    ? '⏱️ Délai dépassé (120s). Simplifiez votre question ou réessayez.'
+                    : '❌ Erreur de connexion: ' + error.message;
+                appendChatMessage('assistant', '<p style="color:#ef4444">' + escapeHtml(msg) + '</p>', true);
+                showToast('Erreur', 'error');
             } finally {
-                loadingState.classList.add('hidden');
                 analyzeBtn.disabled = false;
-                analyzeBtn.innerHTML = '<i class="fas fa-bolt"></i><span>Analyser</span>';
+                analyzeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
             }
         }
-
         /* ── Display Results ──────────────────────────── */
 
         function displayResults(result) {
@@ -1951,7 +3382,7 @@
                 const arr = Array.isArray(dataToDisplay) ? dataToDisplay : [dataToDisplay];
                 dataDiv.innerHTML = arr.length > 0 ? formatTableData(arr) : '<p class="text-gray-500 text-center py-8">Aucune donnée à afficher</p>';
             } else {
-                dataDiv.innerHTML = '<p class="text-gray-500 text-center py-8"><i class="fas fa-info-circle mr-2"></i>Aucune donnée à afficher</p>';
+                dataDiv.innerHTML = '<p class="text-gray-500 text-center py-8">Aucune donnée à afficher</p>';
             }
 
             // Code
@@ -1970,13 +3401,22 @@
             }
         }
 
-        function displayError(error) {
+        function displayError(error, suggestions) {
+            let suggestionsHtml = '';
+            if (suggestions && Array.isArray(suggestions)) {
+                suggestionsHtml = '<div class="mt-3 space-y-1">' +
+                    suggestions.map(s => `<div class="text-yellow-300 text-sm">💡 ${s}</div>`).join('') +
+                    '</div>';
+            }
+            
             document.getElementById('aiResponse').innerHTML = `
                 <div class="alert-card critical">
-                    <i class="fas fa-exclamation-triangle text-red-400 mt-0.5"></i>
+                    <div class="flex items-start gap-3">
+                        <span class="text-red-400 text-lg">⚠️</span>
                     <div>
                         <p class="text-red-300 font-medium mb-1">Erreur d'analyse</p>
                         <p class="text-red-400 text-sm">${error}</p>
+                        ${suggestionsHtml}
                     </div>
                 </div>`;
             document.getElementById('dataResults').innerHTML = '<p class="text-gray-500 text-center py-6">Aucune donnée disponible suite à l\'erreur</p>';
@@ -2019,7 +3459,7 @@
 
                 html += `<div class="briefing-card mb-6">
                     <h4 class="font-bold text-indigo-300 mb-4 flex items-center gap-2 text-base">
-                        <i class="fas fa-brain"></i> Briefing Décisionnel
+                        Briefing Décisionnel
                     </h4>
                     <div class="briefing-text"><p>${resumeHtml}</p></div>
                 </div>`;
@@ -2028,7 +3468,7 @@
             // ── CONTEXTE / PÉRIODE ──
             if (analysis.contexte && analysis.contexte.mois_nom) {
                 html += `<div class="context-card mb-5">
-                    <i class="fas fa-calendar-alt text-blue-400 text-lg"></i>
+                    <span class="text-blue-400 text-lg">📅</span>
                     <div>
                         <p class="text-xs text-gray-500 font-medium">Période Analysée</p>
                         <p class="text-white font-semibold">${analysis.contexte.mois_nom} ${analysis.contexte.annee || ''}</p>
@@ -2040,7 +3480,7 @@
             if (analysis.alertes_decisionnelles && analysis.alertes_decisionnelles.length > 0) {
                 html += `<div class="mb-6">
                     <h4 class="font-bold text-red-300 mb-4 flex items-center gap-2 text-base">
-                        <i class="fas fa-exclamation-triangle"></i> Alertes pour la Prise de Décision
+                        Alertes pour la Prise de Décision
                     </h4>`;
 
                 analysis.alertes_decisionnelles.forEach(alerte => {
@@ -2054,7 +3494,7 @@
                             <h5 class="${txtCls} font-bold text-sm mb-1">${alerte.niveau} — ${alerte.titre}</h5>
                             <p class="text-gray-300 text-sm mb-2">${alerte.message}</p>
                             <p class="text-gray-500 text-xs italic flex items-center gap-1">
-                                <i class="fas fa-arrow-right" style="font-size:10px"></i>${alerte.action_requise}
+                                → ${alerte.action_requise}
                             </p>
                         </div>
                     </div>`;
@@ -2066,12 +3506,12 @@
             if (analysis.alertes && analysis.alertes.length > 0 && (!analysis.alertes_decisionnelles || analysis.alertes_decisionnelles.length === 0)) {
                 html += `<div class="mb-6">
                     <h4 class="font-bold text-amber-300 mb-3 flex items-center gap-2 text-sm">
-                        <i class="fas fa-bell"></i> Alertes
+                        Alertes
                     </h4>`;
                 analysis.alertes.forEach(alerte => {
                     const cls = alerte.niveau === 'critique' ? 'critical' : alerte.niveau === 'moyen' ? 'warning' : 'info';
                     html += `<div class="alert-card ${cls}">
-                        <i class="fas fa-exclamation-circle ${alerte.niveau === 'critique' ? 'text-red-400' : 'text-amber-400'} mt-0.5"></i>
+                        <span class="${alerte.niveau === 'critique' ? 'text-red-400' : 'text-amber-400'} mt-0.5">⚠️</span>
                         <p class="text-gray-300 text-sm">${alerte.message}</p>
                     </div>`;
                 });
@@ -2082,7 +3522,7 @@
             if (analysis.kpis && Object.keys(analysis.kpis).length > 0) {
                 html += `<div class="mb-6">
                     <h4 class="font-bold text-blue-300 mb-4 flex items-center gap-2 text-base">
-                        <i class="fas fa-chart-bar"></i> Indicateurs Clés de Performance
+                        Indicateurs Clés de Performance
                     </h4>
                     <div class="kpi-grid">`;
 
@@ -2144,7 +3584,6 @@
 
                         html += `<div class="kpi-card ${statusClass}">
                             <div class="kpi-label">
-                                <i class="fas ${config.icon}" style="font-size:11px"></i>
                                 ${config.emoji} ${config.label}
                             </div>
                             <div class="kpi-value">${displayValue}</div>
@@ -2164,7 +3603,7 @@
                     html += `</div>
                     <div class="flex justify-center mt-4">
                         <span class="perf-badge ${cls}">
-                            <i class="fas fa-award"></i>
+                            🏆
                             Performance Globale : ${analysis.kpis.qualification_performance}
                         </span>
                     </div>`;
@@ -2180,7 +3619,7 @@
                 const stats = analysis.statistiques;
                 html += `<div class="analysis-sub-card mb-6">
                     <h4 class="font-semibold text-gray-300 mb-4 flex items-center gap-2 text-sm">
-                        <i class="fas fa-chart-pie text-blue-400"></i> Statistiques Descriptives
+                        Statistiques Descriptives
                     </h4>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">`;
 
@@ -2198,7 +3637,7 @@
             if (analysis.recommandations_strategiques && analysis.recommandations_strategiques.length > 0) {
                 html += `<div class="mb-6">
                     <h4 class="font-bold text-amber-300 mb-4 flex items-center gap-2 text-base">
-                        <i class="fas fa-bullseye"></i> Recommandations Stratégiques
+                        Recommandations Stratégiques
                     </h4>`;
 
                 analysis.recommandations_strategiques.forEach(reco => {
@@ -2211,14 +3650,14 @@
                         <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
                             <div class="flex items-center gap-2">
                                 <span class="priority-badge ${pCls}">${emoji} ${prio}</span>
-                                ${reco.domaine ? `<span class="text-gray-500 text-xs"><i class="fas fa-tag mr-1"></i>${reco.domaine}</span>` : ''}
+                                ${reco.domaine ? `<span class="text-gray-500 text-xs">${reco.domaine}</span>` : ''}
                             </div>
-                            ${reco.responsable ? `<span class="text-gray-600 text-xs"><i class="fas fa-user-tie mr-1"></i>${reco.responsable}</span>` : ''}
+                            ${reco.responsable ? `<span class="text-gray-600 text-xs">${reco.responsable}</span>` : ''}
                         </div>
                         <h5 class="text-white font-semibold text-sm mb-1">${reco.action}</h5>
                         ${reco.detail ? `<p class="text-gray-400 text-sm mb-2">${reco.detail}</p>` : ''}
                         ${reco.impact_estime ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded" style="background:rgba(16,185,129,0.08); color:var(--accent-green-light)">
-                            <i class="fas fa-chart-line" style="font-size:10px"></i>Impact : ${reco.impact_estime}
+                            Impact : ${reco.impact_estime}
                         </span>` : ''}
                     </div>`;
                 });
@@ -2229,7 +3668,7 @@
             if (analysis.synthese_executive) {
                 html += `<div class="analysis-sub-card mb-6" style="border-left: 3px solid var(--accent-blue);">
                     <h4 class="font-semibold text-blue-300 mb-3 flex items-center gap-2 text-sm">
-                        <i class="fas fa-star"></i> Indicateurs Détaillés
+                        Indicateurs Détaillés
                     </h4>
                     <div class="text-gray-300 text-sm whitespace-pre-line leading-relaxed">${analysis.synthese_executive}</div>
                 </div>`;
@@ -2239,7 +3678,7 @@
             if (analysis.repartition && analysis.repartition.par_taxe && analysis.repartition.par_taxe.length > 0) {
                 html += `<div class="analysis-sub-card mb-6">
                     <h4 class="font-semibold text-purple-300 mb-4 flex items-center gap-2 text-sm">
-                        <i class="fas fa-trophy"></i> Top Taxes par Montant
+                        Top Taxes par Montant
                     </h4>`;
 
                 analysis.repartition.par_taxe.slice(0, 5).forEach((taxe, i) => {
@@ -2264,7 +3703,7 @@
             if (analysis.repartition && analysis.repartition.par_bureau && analysis.repartition.par_bureau.length > 0) {
                 html += `<div class="analysis-sub-card mb-6">
                     <h4 class="font-semibold text-cyan-300 mb-4 flex items-center gap-2 text-sm">
-                        <i class="fas fa-building"></i> Top Bureaux
+                        Top Bureaux
                     </h4>`;
 
                 analysis.repartition.par_bureau.slice(0, 5).forEach((bureau, i) => {
@@ -2284,37 +3723,37 @@
                 const af = analysis.analyse_financiere;
                 html += `<div class="mb-6 p-6 rounded-xl" style="background:rgba(139,92,246,0.04); border:1px solid rgba(139,92,246,0.12);">
                     <h4 class="font-bold text-purple-300 mb-5 flex items-center gap-2 text-base">
-                        <i class="fas fa-briefcase"></i> Analyse Financière Experte
+                        Analyse Financière Experte
                     </h4>`;
 
                 if (af.synthese) {
                     html += `<div class="mb-4 p-4 rounded-lg" style="background:rgba(139,92,246,0.06)">
-                        <h5 class="text-purple-300 text-sm font-semibold mb-2"><i class="fas fa-chart-pie mr-2"></i>Synthèse</h5>
+                        <h5 class="text-purple-300 text-sm font-semibold mb-2">Synthèse</h5>
                         <p class="text-gray-300 text-sm leading-relaxed">${af.synthese}</p>
                     </div>`;
                 }
                 if (af.tendances && af.tendances.length > 0) {
-                    html += `<div class="mb-4"><h5 class="text-green-300 text-sm font-semibold mb-2"><i class="fas fa-chart-line mr-2"></i>Tendances</h5><ul class="space-y-1">`;
-                    af.tendances.forEach(t => html += `<li class="text-gray-300 text-sm flex items-start gap-2"><i class="fas fa-arrow-trend-up text-green-400 mt-1" style="font-size:11px"></i>${t}</li>`);
+                    html += `<div class="mb-4"><h5 class="text-green-300 text-sm font-semibold mb-2">Tendances</h5><ul class="space-y-1">`;
+                    af.tendances.forEach(t => html += `<li class="text-gray-300 text-sm flex items-start gap-2">• ${t}</li>`);
                     html += '</ul></div>';
                 }
                 if (af.points_vigilance && af.points_vigilance.length > 0) {
-                    html += `<div class="mb-4"><h5 class="text-amber-300 text-sm font-semibold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Points de Vigilance</h5><ul class="space-y-1">`;
-                    af.points_vigilance.forEach(p => html += `<li class="text-amber-200 text-sm flex items-start gap-2 p-2 rounded" style="background:rgba(245,158,11,0.04)"><i class="fas fa-circle text-red-500 mt-1.5" style="font-size:5px"></i>${p}</li>`);
+                    html += `<div class="mb-4"><h5 class="text-amber-300 text-sm font-semibold mb-2">Points de Vigilance</h5><ul class="space-y-1">`;
+                    af.points_vigilance.forEach(p => html += `<li class="text-amber-200 text-sm flex items-start gap-2 p-2 rounded" style="background:rgba(245,158,11,0.04)">⚠️ ${p}</li>`);
                     html += '</ul></div>';
                 }
                 if (af.opportunites && af.opportunites.length > 0) {
-                    html += `<div class="mb-4"><h5 class="text-blue-300 text-sm font-semibold mb-2"><i class="fas fa-lightbulb mr-2"></i>Opportunités</h5><ul class="space-y-1">`;
-                    af.opportunites.forEach(o => html += `<li class="text-gray-300 text-sm flex items-start gap-2 p-2 rounded" style="background:rgba(59,130,246,0.04)"><i class="fas fa-check-circle text-green-400 mt-0.5" style="font-size:12px"></i>${o}</li>`);
+                    html += `<div class="mb-4"><h5 class="text-blue-300 text-sm font-semibold mb-2">Opportunités</h5><ul class="space-y-1">`;
+                    af.opportunites.forEach(o => html += `<li class="text-gray-300 text-sm flex items-start gap-2 p-2 rounded" style="background:rgba(59,130,246,0.04)">✓ ${o}</li>`);
                     html += '</ul></div>';
                 }
                 if (af.risques && af.risques.length > 0) {
-                    html += `<div class="mb-4"><h5 class="text-red-300 text-sm font-semibold mb-2"><i class="fas fa-shield-alt mr-2"></i>Risques</h5><ul class="space-y-1">`;
-                    af.risques.forEach(r => html += `<li class="text-red-200 text-sm flex items-start gap-2 p-2 rounded" style="background:rgba(239,68,68,0.04); border-left:2px solid rgba(239,68,68,0.3)"><i class="fas fa-exclamation-circle text-red-400 mt-0.5" style="font-size:12px"></i>${r}</li>`);
+                    html += `<div class="mb-4"><h5 class="text-red-300 text-sm font-semibold mb-2">Risques</h5><ul class="space-y-1">`;
+                    af.risques.forEach(r => html += `<li class="text-red-200 text-sm flex items-start gap-2 p-2 rounded" style="background:rgba(239,68,68,0.04); border-left:2px solid rgba(239,68,68,0.3)">! ${r}</li>`);
                     html += '</ul></div>';
                 }
                 if (af.recommandations_strategiques && af.recommandations_strategiques.length > 0) {
-                    html += `<div class="mb-2"><h5 class="text-amber-300 text-sm font-semibold mb-3"><i class="fas fa-bullseye mr-2"></i>Actions Stratégiques</h5>
+                    html += `<div class="mb-2"><h5 class="text-amber-300 text-sm font-semibold mb-3">Actions Stratégiques</h5>
                     <div class="overflow-x-auto"><table class="data-table w-full"><thead><tr>
                         <th class="px-3 py-2 text-xs">Priorité</th><th class="px-3 py-2 text-xs">Action</th><th class="px-3 py-2 text-xs">Impact</th>
                     </tr></thead><tbody>`;
@@ -2332,7 +3771,7 @@
             if (analysis.recommandations && analysis.recommandations.length > 0 && (!analysis.recommandations_strategiques || analysis.recommandations_strategiques.length === 0)) {
                 html += `<div class="mb-6">
                     <h4 class="font-semibold text-green-300 mb-3 flex items-center gap-2 text-sm">
-                        <i class="fas fa-lightbulb"></i> Recommandations
+                        Recommandations
                     </h4>`;
                 analysis.recommandations.forEach((rec, i) => {
                     const color = rec.priorite === 'haute' ? 'text-red-300' : rec.priorite === 'moyenne' ? 'text-amber-300' : 'text-blue-300';
@@ -2351,13 +3790,13 @@
 
                 html += `<div class="mb-6 p-6 rounded-xl" style="background:rgba(59,130,246,0.03); border:1px solid rgba(59,130,246,0.1);">
                     <h4 class="font-bold text-blue-300 mb-5 flex items-center gap-2 text-base">
-                        <i class="fas fa-cubes"></i> Analyses Complémentaires
+                        Analyses Complémentaires
                     </h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">`;
 
                 // Nature
                 if (ac.repartition_nature && ac.repartition_nature.length > 0) {
-                    html += `<div class="analysis-sub-card"><h5 class="text-purple-300 text-sm font-semibold mb-3 flex items-center gap-2"><i class="fas fa-tags"></i>Par Nature</h5><div class="space-y-2">`;
+                    html += `<div class="analysis-sub-card"><h5 class="text-purple-300 text-sm font-semibold mb-3 flex items-center gap-2">Par Nature</h5><div class="space-y-2">`;
                     ac.repartition_nature.slice(0, 5).forEach((item, i) => {
                         const pct = item.POURCENTAGE || item.POURCENTAGE_RECOUVRE || item.POURCENTAGE_DECLARE || 0;
                         html += `<div class="flex justify-between items-center p-2 rounded" style="background:rgba(255,255,255,0.02)">
@@ -2370,7 +3809,7 @@
 
                 // Libellés
                 if (ac.top_libelles && ac.top_libelles.length > 0) {
-                    html += `<div class="analysis-sub-card"><h5 class="text-green-300 text-sm font-semibold mb-3 flex items-center gap-2"><i class="fas fa-list-ol"></i>Top Libellés</h5><div class="space-y-2">`;
+                    html += `<div class="analysis-sub-card"><h5 class="text-green-300 text-sm font-semibold mb-3 flex items-center gap-2">Top Libellés</h5><div class="space-y-2">`;
                     ac.top_libelles.slice(0, 5).forEach((item, i) => {
                         html += `<div class="flex justify-between items-center p-2 rounded" style="background:rgba(255,255,255,0.02)">
                             <span class="text-gray-300 text-xs truncate" style="max-width:60%">${i+1}. ${item.LIBELLE || 'N/A'}</span>
@@ -2382,7 +3821,7 @@
 
                 // Pays
                 if (ac.repartition_pays && ac.repartition_pays.length > 0) {
-                    html += `<div class="analysis-sub-card"><h5 class="text-orange-300 text-sm font-semibold mb-3 flex items-center gap-2"><i class="fas fa-globe-africa"></i>Par Pays</h5><div class="space-y-2">`;
+                    html += `<div class="analysis-sub-card"><h5 class="text-orange-300 text-sm font-semibold mb-3 flex items-center gap-2">Par Pays</h5><div class="space-y-2">`;
                     ac.repartition_pays.slice(0, 5).forEach((item, i) => {
                         html += `<div class="flex justify-between items-center p-2 rounded" style="background:rgba(255,255,255,0.02)">
                             <span class="text-gray-300 text-xs">${i+1}. ${item.PAYS || 'N/A'}</span>
@@ -2394,7 +3833,7 @@
 
                 // Catégorie
                 if (ac.repartition_categorie && ac.repartition_categorie.length > 0) {
-                    html += `<div class="analysis-sub-card"><h5 class="text-cyan-300 text-sm font-semibold mb-3 flex items-center gap-2"><i class="fas fa-folder-open"></i>Par Catégorie</h5><div class="space-y-2">`;
+                    html += `<div class="analysis-sub-card"><h5 class="text-cyan-300 text-sm font-semibold mb-3 flex items-center gap-2">Par Catégorie</h5><div class="space-y-2">`;
                     ac.repartition_categorie.slice(0, 5).forEach((item, i) => {
                         const pct = item.POURCENTAGE || item.POURCENTAGE_RECOUVRE || item.POURCENTAGE_DECLARE || 0;
                         html += `<div class="flex justify-between items-center p-2 rounded" style="background:rgba(255,255,255,0.02)">
@@ -2417,7 +3856,7 @@
 
         function formatTableData(data, showAll = false) {
             fullTableData = data;
-            if (!data || data.length === 0) return '<p class="text-gray-500 text-center py-8"><i class="fas fa-info-circle mr-2"></i>Aucune donnée</p>';
+            if (!data || data.length === 0) return '<p class="text-gray-500 text-center py-8">Aucune donnée</p>';
 
             const limit = showAll ? data.length : Math.min(25, Math.max(10, Math.floor(data.length * 0.2)));
             const displayed = data.slice(0, limit);
@@ -2463,16 +3902,16 @@
                         <span class="text-xs px-2 py-0.5 rounded-full" style="background:rgba(59,130,246,0.1); color:var(--accent-blue-light)">${Math.round(limit/data.length*100)}%</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="expandTable()" class="btn-primary-sm"><i class="fas fa-eye"></i>Tout afficher</button>
-                        <button onclick="downloadCSV()" class="btn-secondary"><i class="fas fa-download"></i>Export CSV</button>
+                        <button onclick="expandTable()" class="btn-primary-sm">Tout afficher</button>
+                        <button onclick="downloadCSV()" class="btn-secondary">Export CSV</button>
                     </div>
                 </div>`;
             } else {
                 html += `<div class="table-footer" style="justify-content:center">
                     <div class="flex items-center gap-4 text-sm text-gray-400">
-                        <span class="flex items-center gap-1"><i class="fas fa-check-circle text-green-400" style="font-size:12px"></i>Tous affichés</span>
+                        <span class="flex items-center gap-1">✓ Tous affichés</span>
                         <span class="text-white font-medium">${data.length} résultats</span>
-                        <button onclick="downloadCSV()" class="btn-secondary"><i class="fas fa-download"></i>Export</button>
+                        <button onclick="downloadCSV()" class="btn-secondary">Export</button>
                     </div>
                 </div>`;
             }
@@ -2507,11 +3946,15 @@
         }
 
         /* ═══════════════════════════════════════════════════
-           SIDEBAR, HISTORY & PROFILE MANAGEMENT
+           SIDEBAR, PROJECTS & PROFILE MANAGEMENT
            ═══════════════════════════════════════════════════ */
 
-        const HISTORY_KEY = 'srmt_history';
-        let currentConversationId = null;
+        const PROJECTS_KEY = 'srmt_projects';
+        const MAX_PROJECTS = 50;
+        const MAX_MSGS_PER_PROJECT = 200;
+        const MAX_STORAGE_SIZE = 4 * 1024 * 1024; // 4MB
+        let currentProjectId = null;
+        let _activeMenuProjectId = null;
 
         // ── Sidebar Toggle ──
         function toggleSidebar() {
@@ -2546,183 +3989,332 @@
             }
         });
 
-        // ── History Management (localStorage) ──
-        function getHistory() {
+        // ── Projects Management (localStorage) ──
+        function _genId(prefix) {
+            return (prefix||'x') + '_' + Date.now().toString(36) + Math.random().toString(36).substr(2,5);
+        }
+
+        function getProjects() {
             try {
-                return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-            } catch { return []; }
-        }
-
-        function saveHistory(history) {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        }
-
-        function addToHistory(query, response, code) {
-            const history = getHistory();
-            const entry = {
-                id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
-                query: query,
-                response: response,
-                code: code || '',
-                timestamp: new Date().toISOString(),
-                date: new Date().toLocaleDateString('fr-FR'),
-                time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-            };
-            history.unshift(entry); // newest first
-            // Keep max 50 entries
-            if (history.length > 50) history.pop();
-            saveHistory(history);
-            currentConversationId = entry.id;
-            renderHistory();
-            return entry;
-        }
-
-        function deleteHistoryItem(id, event) {
-            event.stopPropagation();
-            let history = getHistory();
-            history = history.filter(h => h.id !== id);
-            saveHistory(history);
-            if (currentConversationId === id) {
-                currentConversationId = null;
+                const data = localStorage.getItem(PROJECTS_KEY);
+                if (!data) return [];
+                return JSON.parse(data);
+            } catch(e) {
+                localStorage.removeItem(PROJECTS_KEY);
+                return [];
             }
-            renderHistory();
+        }
+
+        function saveProjects(projects) {
+            try {
+                const json = JSON.stringify(projects);
+                if (json.length > MAX_STORAGE_SIZE) {
+                    projects = projects.slice(0, 20);
+                    projects.forEach(p => { if (p.messages.length > 30) p.messages = p.messages.slice(-30); });
+                    showToast('⚠️ Historique réduit pour économiser l\'espace', 'warning');
+                }
+                localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+            } catch(e) {
+                if (e.name === 'QuotaExceededError' || e.code === 22) {
+                    try {
+                        const slim = projects.slice(0, 10).map(p => ({ ...p, messages: p.messages.slice(-10) }));
+                        localStorage.setItem(PROJECTS_KEY, JSON.stringify(slim));
+                        showToast('⚠️ Stockage plein — historique réduit', 'warning');
+                    } catch(e2) {
+                        localStorage.removeItem(PROJECTS_KEY);
+                        showToast('❌ Historique vidé (quota dépassé)', 'error');
+                    }
+                }
+            }
+        }
+
+        function getCurrentProject() {
+            if (!currentProjectId) return null;
+            return getProjects().find(p => p.id === currentProjectId) || null;
+        }
+
+        function createProject(name) {
+            const projects = getProjects();
+            const now = new Date().toISOString();
+            const project = {
+                id: _genId('proj'),
+                name: name || 'Nouvelle conversation',
+                createdAt: now,
+                updatedAt: now,
+                messages: []
+            };
+            projects.unshift(project);
+            if (projects.length > MAX_PROJECTS) projects.splice(MAX_PROJECTS);
+            saveProjects(projects);
+            currentProjectId = project.id;
+            renderProjects();
+            return project;
+        }
+
+        function getOrCreateCurrentProject(firstMessage) {
+            if (currentProjectId) {
+                const p = getCurrentProject();
+                if (p) return p;
+            }
+            const name = firstMessage.length > 45 ? firstMessage.substring(0, 45) + '…' : firstMessage;
+            return createProject(name);
+        }
+
+        function addMessageToProject(projectId, role, content, htmlContent, code) {
+            const projects = getProjects();
+            const idx = projects.findIndex(p => p.id === projectId);
+            if (idx === -1) return;
+            const msg = {
+                id: _genId('msg'),
+                role,
+                content: typeof content === 'string' ? content.substring(0, 2000) : '',
+                htmlContent: htmlContent || null,
+                code: code ? code.substring(0, 5000) : null,
+                timestamp: new Date().toISOString()
+            };
+            projects[idx].messages.push(msg);
+            projects[idx].updatedAt = msg.timestamp;
+            if (projects[idx].messages.length > MAX_MSGS_PER_PROJECT)
+                projects[idx].messages = projects[idx].messages.slice(-MAX_MSGS_PER_PROJECT);
+            // Move to top (most recent)
+            const updated = projects.splice(idx, 1)[0];
+            projects.unshift(updated);
+            saveProjects(projects);
+            renderProjects();
+        }
+
+        function switchProject(id) {
+            const projects = getProjects();
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+            currentProjectId = id;
+            showChatMode();
+            const msgs = document.getElementById('messagesContainer');
+            msgs.innerHTML = '';
+            project.messages.forEach(function(msg) {
+                if (msg.role === 'user') {
+                    appendChatMessage('user', msg.content, false);
+                } else {
+                    appendChatMessage('assistant', msg.htmlContent || escapeHtml(msg.content || ''), true);
+                }
+            });
+            renderProjects();
+            if (window.innerWidth <= 1024) toggleSidebar();
+            showToast('Conversation chargée', 'success');
+        }
+
+        function startRenameProject(id, event) {
+            if (event) event.stopPropagation();
+            closeProjectMenu();
+            const item = document.querySelector('.folder-item[data-id="' + id + '"]');
+            if (!item) return;
+            const textEl = item.querySelector('.folder-name');
+            if (!textEl) return;
+            const currentName = textEl.textContent.replace(/…$/, '');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentName;
+            input.className = 'folder-rename-input';
+            textEl.replaceWith(input);
+            input.focus();
+            input.select();
+            function save() {
+                const newName = input.value.trim();
+                if (newName) {
+                    const projects = getProjects();
+                    const p = projects.find(p => p.id === id);
+                    if (p) { p.name = newName; saveProjects(projects); }
+                }
+                renderProjects();
+            }
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); save(); }
+                if (e.key === 'Escape') { renderProjects(); }
+            });
+        }
+
+        function deleteProject(id, event) {
+            if (event) event.stopPropagation();
+            closeProjectMenu();
+            if (!confirm('Supprimer cette conversation ?')) return;
+            let projects = getProjects();
+            projects = projects.filter(p => p.id !== id);
+            saveProjects(projects);
+            if (currentProjectId === id) { currentProjectId = null; newConversation(); }
+            renderProjects();
             showToast('Conversation supprimée', 'info');
         }
 
-        function loadHistoryItem(id) {
-            const history = getHistory();
-            const item = history.find(h => h.id === id);
-            if (!item) return;
-
-            currentConversationId = id;
-
-            // Restore the query
-            document.getElementById('queryInput').value = item.query;
-
-            // Restore AI response
-            const aiResponse = document.getElementById('aiResponse');
-            if (item.response && typeof item.response === 'object') {
-                aiResponse.innerHTML = formatDecisionAnalysis(item.response);
-            } else if (window.marked && item.response) {
-                aiResponse.innerHTML = marked.parse(item.response);
-            } else {
-                aiResponse.innerHTML = convertMarkdownToHTML(item.response || '');
-            }
-
-            // Restore data table if available
-            const dataDiv = document.getElementById('dataResults');
-            let dataToDisplay = null;
-            if (item.response && item.response.donnees_detaillees) {
-                dataToDisplay = item.response.donnees_detaillees;
-            }
-            if (dataToDisplay) {
-                const arr = Array.isArray(dataToDisplay) ? dataToDisplay : [dataToDisplay];
-                dataDiv.innerHTML = arr.length > 0 ? formatTableData(arr) : '<p class="text-gray-500 text-center py-8">Aucune donnée</p>';
-            } else {
-                dataDiv.innerHTML = '<p class="text-gray-500 text-center py-6">Données non disponibles pour cette conversation</p>';
-            }
-
-            // Restore code
-            document.getElementById('generatedCode').textContent = item.code || '';
-
-            // Show results area
-            document.getElementById('resultsArea').classList.remove('hidden');
-            document.getElementById('loadingState').classList.add('hidden');
-
-            // Mark active in sidebar
-            renderHistory();
-
-            // Close sidebar on mobile
-            if (window.innerWidth <= 1024) {
-                toggleSidebar();
-            }
-
-            showToast('Conversation restaurée', 'success');
+        function toggleProjectMenu(id, event) {
+            event.stopPropagation();
+            if (_activeMenuProjectId === id) { closeProjectMenu(); return; }
+            closeProjectMenu();
+            _activeMenuProjectId = id;
+            const menu = document.getElementById('projectContextMenu');
+            const btn = event.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            menu.style.top = (rect.bottom + 4) + 'px';
+            // Make sure menu doesn't go off screen right
+            const menuW = 160;
+            const left = Math.min(rect.left, window.innerWidth - menuW - 8);
+            menu.style.left = left + 'px';
+            menu.dataset.projectId = id;
+            menu.classList.add('show');
         }
 
-        function renderHistory() {
+        function closeProjectMenu() {
+            _activeMenuProjectId = null;
+            const menu = document.getElementById('projectContextMenu');
+            if (menu) { menu.classList.remove('show'); menu.dataset.projectId = ''; }
+        }
+
+        function startRenameFromMenu() {
+            const id = document.getElementById('projectContextMenu').dataset.projectId;
+            if (!id) return;
+            closeProjectMenu();
+            startRenameProject(id, null);
+        }
+
+        function deleteFromMenu() {
+            const id = document.getElementById('projectContextMenu').dataset.projectId;
+            if (!id) return;
+            closeProjectMenu();
+            deleteProject(id, null);
+        }
+
+        let _searchFilter = '';
+        function filterProjects(val) {
+            _searchFilter = (val || '').toLowerCase();
+            renderProjects();
+        }
+
+        function renderProjects() {
             const container = document.getElementById('sidebarBody');
-            const history = getHistory();
-            const emptyEl = document.getElementById('historyEmpty');
+            let projects = getProjects();
 
-            if (history.length === 0) {
-                container.innerHTML = '';
-                container.appendChild(emptyEl || createEmptyState());
-                if (emptyEl) emptyEl.style.display = 'block';
-                return;
-            }
-
-            // Group by date
-            const groups = {};
-            const today = new Date().toLocaleDateString('fr-FR');
-            const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('fr-FR');
-
-            history.forEach(item => {
-                let label;
-                if (item.date === today) label = "Aujourd'hui";
-                else if (item.date === yesterday) label = 'Hier';
-                else label = item.date;
-                if (!groups[label]) groups[label] = [];
-                groups[label].push(item);
-            });
-
-            let html = '';
-            for (const [label, items] of Object.entries(groups)) {
-                html += `<div class="sidebar-section-label">${label}</div>`;
-                items.forEach(item => {
-                    const isActive = item.id === currentConversationId;
-                    const truncated = item.query.length > 35 ? item.query.substring(0, 35) + '…' : item.query;
-                    html += `<div class="history-item ${isActive ? 'active' : ''}" onclick="loadHistoryItem('${item.id}')">
-                        <span class="history-icon"><i class="fas fa-message"></i></span>
-                        <span class="history-text" title="${item.query.replace(/"/g, '&quot;')}">${truncated}</span>
-                        <button class="history-delete" onclick="deleteHistoryItem('${item.id}', event)" title="Supprimer">
-                            <i class="fas fa-trash-can"></i>
-                        </button>
-                    </div>`;
+            // Filtrage recherche
+            if (_searchFilter) {
+                projects = projects.filter(function(p) {
+                    return p.name.toLowerCase().includes(_searchFilter);
                 });
             }
 
+            if (projects.length === 0) {
+                const emptyMsg = _searchFilter
+                    ? '<div class="history-empty"><p style="font-size:0.82rem;font-weight:500;">Aucun résultat</p><p style="font-size:0.72rem;">' + escapeHtml(_searchFilter) + '</p></div>'
+                    : '<div class="history-empty" id="historyEmpty"><i class="fas fa-folder-open"></i><p style="font-size:0.82rem;font-weight:500;margin-bottom:2px;">Aucun projet</p><p style="font-size:0.72rem;">Commencez une conversation pour créer votre premier projet</p></div>';
+                container.innerHTML = emptyMsg;
+                return;
+            }
+
+            // Groupement par période
+            const now = Date.now();
+            const today = new Date().toLocaleDateString('fr-FR');
+            const yesterday = new Date(now - 86400000).toLocaleDateString('fr-FR');
+            const lastWeekMs = now - 7 * 86400000;
+            const lastMonthMs = now - 30 * 86400000;
+
+            const groups = { "Aujourd'hui": [], 'Hier': [], '7 derniers jours': [], '30 derniers jours': [], 'Plus ancien': [] };
+
+            projects.forEach(function(p) {
+                const d = new Date(p.updatedAt);
+                const dateStr = d.toLocaleDateString('fr-FR');
+                if (dateStr === today) groups["Aujourd'hui"].push(p);
+                else if (dateStr === yesterday) groups['Hier'].push(p);
+                else if (d.getTime() >= lastWeekMs) groups['7 derniers jours'].push(p);
+                else if (d.getTime() >= lastMonthMs) groups['30 derniers jours'].push(p);
+                else groups['Plus ancien'].push(p);
+            });
+
+            // SVG icons
+            const svgFolderClosed = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+            const svgFolderOpen   = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M2 10h20" stroke-dasharray="2 0"/></svg>';
+            const svgDots         = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+
+            let html = '';
+            for (const label in groups) {
+                const items = groups[label];
+                if (items.length === 0) continue;
+                html += '<div class="sidebar-section-label">' + label + '</div>';
+                items.forEach(function(p) {
+                    const isActive = p.id === currentProjectId;
+                    const folderSvg = isActive ? svgFolderOpen : svgFolderClosed;
+                    const truncated = p.name.length > 33 ? p.name.substring(0, 33) + '…' : p.name;
+                    const msgCount = p.messages.filter(function(m) { return m.role === 'user'; }).length;
+                    const safeId = p.id.replace(/'/g, '');
+                    const safeName = p.name.replace(/"/g, '&quot;');
+                    const metaLabel = msgCount === 0 ? 'Vide' : (msgCount === 1 ? '1 message' : msgCount + ' messages');
+                    html += '<div class="folder-item' + (isActive ? ' active' : '') + '" data-id="' + safeId + '" onclick="switchProject(\'' + safeId + '\')">';
+                    html += '<span class="folder-icon">' + folderSvg + '</span>';
+                    html += '<div class="folder-item-body">';
+                    html += '<div class="folder-name" title="' + safeName + '">' + truncated + '</div>';
+                    html += '<div class="folder-meta">' + metaLabel + '</div>';
+                    html += '</div>';
+                    html += '<button class="folder-menu-btn" onclick="toggleProjectMenu(\'' + safeId + '\', event)" title="Options">' + svgDots + '</button>';
+                    html += '</div>';
+                });
+            }
             container.innerHTML = html;
         }
 
-        function createEmptyState() {
-            const div = document.createElement('div');
-            div.className = 'history-empty';
-            div.id = 'historyEmpty';
-            div.innerHTML = `<i class="fas fa-clock-rotate-left"></i>
-                <p style="font-size:0.82rem; font-weight:500;">Aucun historique</p>
-                <p style="font-size:0.72rem; margin-top:4px;">Vos analyses apparaîtront ici</p>`;
-            return div;
+        // Legacy stubs (kept for compatibility with other calls)
+        function getHistory() { return []; }
+        function addToHistory() { /* handled in analyzeQuery */ }
+        function renderHistory() { renderProjects(); }
+        function deleteHistoryItem(id, e) { deleteProject(id, e); }
+        function clearAllHistory() {
+            if (!confirm('Supprimer tous les projets et conversations ?')) return;
+            localStorage.removeItem(PROJECTS_KEY);
+            currentProjectId = null;
+            renderProjects();
+            newConversation();
+            showToast('Tout l\'historique a été effacé', 'success');
+            document.getElementById('profileDropdown')?.classList.remove('show');
         }
 
         function newConversation() {
-            currentConversationId = null;
-            document.getElementById('queryInput').value = '';
-            document.getElementById('resultsArea').classList.add('hidden');
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('aiResponse').innerHTML = '';
-            document.getElementById('dataResults').innerHTML = '';
-            document.getElementById('generatedCode').textContent = '';
-            renderHistory();
-            document.getElementById('queryInput').focus();
-
-            // Close sidebar on mobile
-            if (window.innerWidth <= 1024) {
-                toggleSidebar();
-            }
-
-            showToast('Nouvelle analyse', 'info');
+            currentProjectId = null;
+            closeProjectMenu();
+            const welcome = document.getElementById('welcomeScreen');
+            const msgs = document.getElementById('messagesContainer');
+            if (welcome) welcome.style.display = '';
+            if (msgs) { msgs.classList.remove('active'); msgs.innerHTML = ''; }
+            const input = document.getElementById('queryInput');
+            if (input) { input.value = ''; autoResizeTextarea(input); input.focus(); }
+            const chatArea = document.getElementById('chatArea');
+            if (chatArea) chatArea.scrollTop = 0;
+            renderProjects();
+            if (window.innerWidth <= 1024) toggleSidebar();
+            showToast('Nouveau projet — posez votre première question', 'info');
         }
 
-        function clearAllHistory() {
-            if (!confirm('Voulez-vous vraiment effacer tout l\'historique ?')) return;
-            localStorage.removeItem(HISTORY_KEY);
-            currentConversationId = null;
-            renderHistory();
-            showToast('Historique effacé', 'success');
-            // Close profile dropdown if open
+        async function clearCache() {
+            if (!confirm('Vider le cache IA ?\n\nCela forcera la régénération de toutes les réponses, même pour les questions déjà posées.')) return;
+            
+            try {
+                const response = await fetch('/api/cache/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast(`✅ ${data.message}`, 'success');
+                } else {
+                    showToast(`❌ Erreur: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast('❌ Erreur lors du vidage du cache', 'error');
+                console.error('Erreur vidage cache:', error);
+            }
+            
+            // Close sidebar
             document.getElementById('profileDropdown')?.classList.remove('show');
         }
+
+        // clearAllHistory is now defined in the projects stubs above
 
         function exportHistory() {
             const history = getHistory();
@@ -2759,6 +4351,7 @@
                 document.documentElement.removeAttribute('data-mode');
             }
             localStorage.setItem('srmt_mode', mode);
+            updateModeBtnLabel();
             showToast(mode === 'light' ? '☀️ Mode clair activé' : '🌙 Mode sombre activé', 'success');
         }
 
@@ -2767,7 +4360,19 @@
             currentMode = saved;
             if (saved === 'light') {
                 document.documentElement.setAttribute('data-mode', 'light');
+            } else {
+                document.documentElement.removeAttribute('data-mode');
             }
+            updateModeBtnLabel();
+        }
+
+        function updateModeBtnLabel() {
+            const btn = document.querySelector('.LexFIN-sidebar-mode-btn');
+            if (!btn) return;
+            const isDark = currentMode === 'dark';
+            btn.innerHTML = isDark
+                ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Mode clair`
+                : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" opacity="0.3"/></svg> Mode sombre`;
         }
 
         /* ── Theme Management ─────────────────────────── */
@@ -2836,7 +4441,7 @@
                     <div class="theme-card-label">${t.label}</div>
                     <div class="theme-card-sub">${t.sub}</div>
                     <div class="theme-card-check" style="background:${t.accent}">
-                        <i class="fas fa-check"></i>
+                        <span class="theme-check">✓</span>
                     </div>
                 </button>
             `).join('');
@@ -2863,41 +4468,192 @@
 
         /* ── Event Listeners ──────────────────────────── */
 
+        function toggleModelDropdown(event) {
+            if (event) event.stopPropagation();
+            const dd = document.getElementById('modelDropdown');
+            if (!dd) return;
+            dd.classList.toggle('show');
+        }
+
+        // Fermer le menu contextuel projet au clic ailleurs
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('projectContextMenu');
+            if (menu && !menu.contains(e.target)) closeProjectMenu();
+        });
+
+        /* ══════════════════════════════════════════════════════════════
+           VIEW MODE — LexFin Expert Juridique (lf) / Application BI SRMT (app)
+           ══════════════════════════════════════════════════════════════ */
+        let _viewMode = localStorage.getItem('lexfin_view') || 'lf';
+
+        function setViewMode(mode) {
+            _viewMode = mode;
+            localStorage.setItem('lexfin_view', mode);
+            applyViewMode();
+        }
+
+        /* Toggle: single button switches between 'lf' and 'app' */
+        function toggleViewMode() {
+            setViewMode(_viewMode === 'lf' ? 'app' : 'lf');
+        }
+
+        function applyViewMode() {
+            const lfPanel   = document.getElementById('lexfinPanel');
+            const chatArea  = document.getElementById('chatArea');
+            const btn       = document.getElementById('modeSwitchBtn');
+            const icon      = document.getElementById('modeSwitchIcon');
+            const label     = document.getElementById('modeSwitchLabel');
+            const ta        = document.getElementById('queryInput');
+            const inputBox  = document.getElementById('chatInputBox');
+
+            if (_viewMode === 'lf') {
+                /* ── Show LexFin legal chatbot ── */
+                if (lfPanel)  lfPanel.classList.add('active');
+                if (chatArea) chatArea.style.display = 'none';
+                if (btn)    { btn.classList.remove('app-mode'); }
+                if (icon)   { icon.className = 'ph-bold ph-scales'; }
+                if (label)  { label.textContent = 'LF'; }
+                if (ta)       ta.placeholder = 'Posez votre question à LexFin (TVA, IS, douanes…)';
+                if (inputBox) {
+                    inputBox.style.borderColor = '#10b981';
+                    inputBox.style.boxShadow   = '0 2px 10px rgba(0,0,0,0.06),0 0 0 3px rgba(16,185,129,0.12)';
+                }
+            } else {
+                /* ── Show Application BI SRMT ── */
+                if (lfPanel)  lfPanel.classList.remove('active');
+                if (chatArea) chatArea.style.display = '';
+                if (btn)    { btn.classList.add('app-mode'); }
+                if (icon)   { icon.className = 'ph-bold ph-squares-four'; }
+                if (label)  { label.textContent = 'App'; }
+                if (ta)       ta.placeholder = 'Analyser vos données SRMT (recettes, contribuables…)';
+                if (inputBox) {
+                    inputBox.style.borderColor = '';
+                    inputBox.style.boxShadow   = '';
+                }
+            }
+        }
+
+        /* Quick-query from App dashboard: pre-fill + send + switch to app mode */
+        function quickQuery(text) {
+            setViewMode('app');
+            const ta = document.getElementById('queryInput');
+            if (ta) { ta.value = text; autoResizeTextarea(ta); }
+            setTimeout(() => analyzeQuery(), 80);
+        }
+
+        /* LexFin quick-query: pre-fill + send in lf mode */
+        function lfQuery(text) {
+            setViewMode('lf');
+            const ta = document.getElementById('queryInput');
+            if (ta) { ta.value = text; autoResizeTextarea(ta); }
+            setTimeout(() => analyzeQuery(), 80);
+        }
+
+        /* ── LexFin chat helpers ── */
+        function showLFChatMode() {
+            const welcome = document.getElementById('lfWelcome');
+            const msgs    = document.getElementById('lfMessages');
+            if (welcome) welcome.style.display = 'none';
+            if (msgs)    msgs.classList.add('active');
+        }
+
+        function appendLFMessage(role, content, isHtml = false) {
+            const msgs = document.getElementById('lfMessages');
+            const row  = document.createElement('div');
+            row.className = 'message-row ' + role;
+            if (role === 'user') {
+                row.innerHTML = '<div class="user-bubble">' + escapeHtml(content) + '</div>';
+            } else {
+                const avatarHtml = '<div class="lf-avatar-msg">⚖️</div>';
+                row.innerHTML = avatarHtml + '<div class="ai-message-content">' + (isHtml ? content : escapeHtml(content)) + '</div>';
+            }
+            msgs.appendChild(row);
+            scrollLFToBottom();
+            return row;
+        }
+
+        function appendLFLoadingBubble() {
+            const id   = 'lflb-' + (++_loadingCount);
+            const msgs = document.getElementById('lfMessages');
+            const row  = document.createElement('div');
+            row.id = id; row.className = 'message-row assistant';
+            row.innerHTML = '<div class="lf-avatar-msg">⚖️</div><div class="ai-message-content"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+            msgs.appendChild(row);
+            scrollLFToBottom();
+            return id;
+        }
+
+        function scrollLFToBottom() {
+            const p = document.getElementById('lexfinPanel');
+            if (p) p.scrollTop = p.scrollHeight;
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            renderProjects();
+            applyViewMode(); // Restaurer le mode (chat ou app)
             const today = new Date();
             const year = today.getFullYear();
             const monthNames = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
             const month = monthNames[today.getMonth()];
             const dateStr = today.toLocaleDateString('fr-FR');
 
-            // Sidebar visible par défaut sur desktop, masquée sur mobile
-            if (window.innerWidth <= 1024) {
+            // 🤖 Restaurer le modèle sélectionné
+            const savedModel = localStorage.getItem('selectedModel');
+            if (savedModel) {
+                // Mettre à jour le dropdown custom
+                const savedOption = document.querySelector(`[data-model="${savedModel}"]`);
+                if (savedOption) {
+                    document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('selected'));
+                    savedOption.classList.add('selected');
+                    const modelName = savedOption.querySelector('.model-option-name').textContent;
+                    document.getElementById('selectedModelName').textContent = modelName;
+                }
+            }
+            
+            // Gérer le sélecteur de modèles — sélection + fermeture externe
+            const modelBtn = document.getElementById('modelSelectorBtn');
+            const modelDropdown = document.getElementById('modelDropdown');
+            
+            if (modelBtn && modelDropdown) {
+                // Sélection d'un modèle
+                document.querySelectorAll('.model-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const model = option.dataset.model;
+                        document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        localStorage.setItem('selectedModel', model);
+                        const modelName = option.querySelector('.model-option-name').textContent;
+                        document.getElementById('selectedModelName').textContent = modelName;
+                        modelDropdown.classList.remove('show');
+                        showToast('✓ Modèle: ' + modelName, 'success');
+                    });
+                });
+
+                // Fermer en cliquant ailleurs
+                document.addEventListener('click', (e) => {
+                    if (!modelBtn.contains(e.target) && !modelDropdown.contains(e.target)) {
+                        modelDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // 📌 Sidebar: Visible par défaut sur grand écran
+            const screenWidth = window.innerWidth;
+            if (screenWidth <= 1280) {
                 document.getElementById('sidebar')?.classList.remove('open');
-                document.getElementById('sidebarOverlay')?.classList.remove('show');
+            } else {
+                document.getElementById('sidebar')?.classList.add('open');
             }
 
-            document.getElementById('analyzeBtn')?.addEventListener('click', e => { e.preventDefault(); analyzeQuery(); });
-            document.getElementById('btnTop')?.addEventListener('click', () => setQuery(`Top 10 des contribuables par montant recouvré au ${dateStr}`));
-            document.getElementById('btnEvolution')?.addEventListener('click', () => setQuery(`Évolution mensuelle des recouvrements en ${year}`));
-            document.getElementById('btnRegional')?.addEventListener('click', () => setQuery(`Performance par direction régionale en ${month} ${year}`));
-            document.getElementById('btnComparaison')?.addEventListener('click', () => setQuery(`Comparaison montant déclaré vs recouvré pour ${month} ${year}`));
-            document.getElementById('toggleCodeBtn')?.addEventListener('click', toggleCode);
+            // Focus textarea
+            setTimeout(() => document.getElementById('queryInput')?.focus(), 300);
 
-            const input = document.getElementById('queryInput');
-            if (input) {
-                input.addEventListener('keypress', e => { if (e.key === 'Enter') analyzeQuery(); });
-                setTimeout(() => input.focus(), 300);
-            }
-
-            // Keyboard shortcuts
+            // Keyboard shortcut Ctrl+K = toggle sidebar
             document.addEventListener('keydown', function(e) {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                     e.preventDefault();
                     toggleSidebar();
-                }
-                if (e.key === 'Escape') {
-                    closeThemeModal();
-                    document.getElementById('profileDropdown')?.classList.remove('show');
                 }
             });
 
@@ -2921,12 +4677,11 @@
             z-index: 1000;
             transition: all 0.3s;
             border: none;
+            visibility: hidden;
+            pointer-events: none;
         }
         .lexfin-chat-button:hover { transform: scale(1.08); box-shadow: 0 8px 32px rgba(16, 185, 129, 0.45); }
-        .lexfin-chat-button i { font-size: 28px; color: white; }
-        .lexfin-chat-button.active i.fa-comments { display: none; }
-        .lexfin-chat-button.active i.fa-times { display: block; }
-        .lexfin-chat-button i.fa-times { display: none; }
+        /* REMOVED: Icon toggle styles - using text now */
 
         .lexfin-chat-widget {
             position: fixed; bottom: 110px; right: 28px;
@@ -3048,35 +4803,34 @@
     </style>
 
     <button class="lexfin-chat-button" id="lexfinChatButton" onclick="toggleLexfinChat()">
-        <i class="fas fa-comments"></i>
-        <i class="fas fa-times"></i>
+        LF
     </button>
 
     <div class="lexfin-chat-widget" id="lexfinChatWidget">
         <div class="lexfin-chat-header">
             <div>
-                <h3><i class="fas fa-balance-scale mr-1"></i> LexFin Assistant</h3>
+                <h3>LexFin Assistant</h3>
                 <p>Expert fiscal et douanier</p>
             </div>
         </div>
 
         <div class="lexfin-chat-messages" id="lexfinChatMessages">
             <div class="lexfin-welcome">
-                <i class="fas fa-gavel"></i>
+                ⚖️
                 <h4 style="font-size:16px; margin:8px 0; color:var(--text-primary);">Bienvenue sur LexFin 👋</h4>
                 <p style="font-size:12px; margin-bottom:16px;">Expert en droit fiscal et douanier sénégalais</p>
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <button onclick="askLexfinQuestion('Quel est le taux de la TVA ?')" class="lexfin-suggestion-btn">
-                        <i class="fas fa-percentage mr-2 text-blue-400" style="font-size:11px"></i>Quel est le taux de la TVA ?
+                        Quel est le taux de la TVA ?
                     </button>
                     <button onclick="askLexfinQuestion('Quelles sont les nouveautés de la loi de finances 2026 ?')" class="lexfin-suggestion-btn">
-                        <i class="fas fa-file-invoice mr-2 text-green-400" style="font-size:11px"></i>Nouveautés loi de finances 2026
+                        Nouveautés loi de finances 2026
                     </button>
                     <button onclick="askLexfinQuestion('Quels sont les droits de douane applicables ?')" class="lexfin-suggestion-btn">
-                        <i class="fas fa-shipping-fast mr-2 text-amber-400" style="font-size:11px"></i>Droits de douane applicables
+                        Droits de douane applicables
                     </button>
                     <button onclick="askLexfinQuestion('Comment calculer l&#39;impôt sur les sociétés ?')" class="lexfin-suggestion-btn">
-                        <i class="fas fa-calculator mr-2 text-purple-400" style="font-size:11px"></i>Calcul impôt sur les sociétés
+                        Calcul impôt sur les sociétés
                     </button>
                 </div>
             </div>
@@ -3086,7 +4840,7 @@
             <div class="lexfin-input-wrapper">
                 <input type="text" class="lexfin-chat-input" id="lexfinChatInput" placeholder="Posez votre question..." autocomplete="off">
                 <button class="lexfin-send-btn" id="lexfinSendBtn" onclick="sendLexfinMessage()">
-                    <i class="fas fa-paper-plane"></i>
+                    ➤
                 </button>
             </div>
         </div>
@@ -3153,7 +4907,7 @@
             const div = document.createElement('div');
             div.className = `lexfin-message ${sender}`;
             div.innerHTML = `
-                <div class="lexfin-message-avatar"><i class="fas fa-${sender === 'user' ? 'user' : 'robot'}"></i></div>
+                <div class="lexfin-message-avatar">${sender === 'user' ? '👤' : '🤖'}</div>
                 <div class="lexfin-message-content">${formatLexfinMessage(text)}</div>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
@@ -3175,7 +4929,7 @@
             const div = document.createElement('div');
             div.className = 'lexfin-message bot';
             div.id = 'lexfinTyping';
-            div.innerHTML = `<div class="lexfin-message-avatar"><i class="fas fa-robot"></i></div>
+            div.innerHTML = `<div class="lexfin-message-avatar">🤖</div>
                 <div class="lexfin-message-content"><div class="lexfin-typing"><div class="lexfin-typing-dot"></div><div class="lexfin-typing-dot"></div><div class="lexfin-typing-dot"></div></div></div>`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
@@ -3201,11 +4955,11 @@
     <div class="theme-modal" id="themeModal">
         <div class="theme-modal-header">
             <div>
-                <h3><i class="fas fa-palette"></i> Apparence</h3>
+                <h3>Apparence</h3>
                 <p>Sélectionnez votre thème de couleur</p>
             </div>
             <button class="theme-modal-close" onclick="closeThemeModal()">
-                <i class="fas fa-times"></i>
+                ×
             </button>
         </div>
         <div class="theme-cards-grid" id="themeCardsGrid">
